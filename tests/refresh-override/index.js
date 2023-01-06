@@ -25,7 +25,7 @@ const helper = document.getElementById('helper');
 
 const moveHelperTip = (num) => {
   isHelperActive = true;
-  helper.style.top = -30 + num + 'px';
+  helper.style.top = -50 + num + 'px';
 };
 
 let touchstartX = 0;
@@ -52,7 +52,7 @@ document.addEventListener('touchmove', (e) => {
   if (atTopOfPage && !isSwipeDown && isSmallGesture && isHelperActive) {
     // clear helper
     isHelperActive = false;
-    helper.style.top = '-30px';
+    helper.style.top = '-50px';
   }
 });
 
@@ -68,7 +68,7 @@ document.addEventListener('touchend', (e) => {
   if (atTopOfPage && isSwipeDown && isBigGesture) {
     // clear helper
     isHelperActive = false;
-    helper.style.top = '-30px';
+    helper.style.top = '-50px';
     getPosts();
   }
 });

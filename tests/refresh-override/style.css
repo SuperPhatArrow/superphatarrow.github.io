@@ -27,8 +27,14 @@ body {
 #helper {
   position: absolute;
   height: 30px;
-  top: -30px;
+  top: -50px;
   left: 50%;
   -webkit-transform: translateX(-50%);
   transform: translateX(-50%);
+  background-color: darkred;
+  color: bisque;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
 }
