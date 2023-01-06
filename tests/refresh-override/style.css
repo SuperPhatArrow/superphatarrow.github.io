@@ -23,3 +23,12 @@ body {
   font-size: xxx-large;
   font-weight: bolder;
 }
+
+#helper {
+  position: absolute;
+  height: 30px;
+  top: -30px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+}
