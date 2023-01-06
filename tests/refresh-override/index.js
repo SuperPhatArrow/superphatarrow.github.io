@@ -28,21 +28,21 @@ const getPosts = async () => {
 };
 displayPosts(Starter);
 
-let touchstartY = 0;
-let touchendY = 0;
+let touchstartX = 0;
+let touchendX = 0;
 
 document.addEventListener('touchstart', (e) => {
-  touchstartY = e.changedTouches[0].screenY;
+  touchstartX = e.changedTouches[0].screenX;
 });
 
 document.addEventListener('touchend', (e) => {
-  touchendY = e.changedTouches[0].screenY;
+  touchendX = e.changedTouches[0].screenX;
   // only when at the top of the page
-  const atTopOfPage = scrollY === 0;
+  const atTopOfPage = scrollX === 0;
   // user is gesturing down
-  const isSwipeDown = touchendY > touchstartY;
+  const isSwipeDown = touchendX > touchstartX;
   // user gesture is at least 10% of the screen
-  const isBigGesture = touchendY - touchstartY > innerHeight / 10;
+  const isBigGesture = touchendX - touchstartX > innerHeight / 10;
   if (atTopOfPage && isSwipeDown && isBigGesture) {
     getPosts();
   }
