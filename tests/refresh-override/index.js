@@ -32,11 +32,11 @@ let touchstartY = 0;
 let touchendY = 0;
 
 document.addEventListener('touchstart', (e) => {
-  touchstartY = e.changedTouches[0].screenX;
+  touchstartY = e.changedTouches[0].screenY;
 });
 
 document.addEventListener('touchend', (e) => {
-  touchendY = e.changedTouches[0].screenX;
+  touchendY = e.changedTouches[0].screenY;
   // only when at the top of the page
   const atTopOfPage = scrollY === 0;
   // user is gesturing down
