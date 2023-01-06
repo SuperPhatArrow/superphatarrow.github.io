@@ -1,5 +1,5 @@
 html {
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
 }
 
 #loading {
