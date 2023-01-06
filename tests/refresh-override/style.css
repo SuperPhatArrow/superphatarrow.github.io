@@ -37,4 +37,5 @@ body {
   display: flex;
   align-items: center;
   border-radius: 50%;
+  transition: transform 0.5s;
 }
