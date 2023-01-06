@@ -29,7 +29,7 @@ let isHelperActive = false;
 
 const moveHelperTip = (num) => {
   isHelperActive = true;
-  helper.style.top = -50 + (num - touchstartX) + 'px';
+  helper.style.top = num - 100 + 'px';
 };
 
 document.addEventListener('touchstart', (e) => {
