@@ -41,8 +41,8 @@ document.addEventListener('touchend', (e) => {
   const atTopOfPage = scrollX === 0;
   // user is gesturing down
   const isSwipeDown = touchendX > touchstartX;
-  // user gesture is at least 10% of the screen
-  const isBigGesture = touchendX - touchstartX > innerHeight / 10;
+  // user gesture is at least 20% of the screen
+  const isBigGesture = touchendX - touchstartX > innerHeight / 20;
   if (atTopOfPage && isSwipeDown && isBigGesture) {
     getPosts();
   }
