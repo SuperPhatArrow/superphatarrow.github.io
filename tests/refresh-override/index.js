@@ -23,14 +23,14 @@ getPosts();
 
 const helper = document.getElementById('helper');
 
-const moveHelperTip = (num) => {
-  isHelperActive = true;
-  helper.style.top = -50 + num + 'px';
-};
-
 let touchstartX = 0;
 let touchendX = 0;
 let isHelperActive = false;
+
+const moveHelperTip = (num) => {
+  isHelperActive = true;
+  helper.style.top = -50 + (touchstartX - num) + 'px';
+};
 
 document.addEventListener('touchstart', (e) => {
   touchstartX = e.changedTouches[0].screenX;
