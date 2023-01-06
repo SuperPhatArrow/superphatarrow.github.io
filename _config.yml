@@ -1,4 +1,4 @@
 theme: jekyll-theme-minimal
-title: Octocat's homepage
+title: SPA's homepage
 description: Bookmark this to keep an eye on my project updates!
 include: [".well-known", "tests"]
