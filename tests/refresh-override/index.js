@@ -66,9 +66,9 @@ document.addEventListener('touchend', (e) => {
   const isBigGesture = touchendX - touchstartX > innerHeight / 20;
   // if conditions then load posts
   if (atTopOfPage && isSwipeDown && isBigGesture) {
-    // clear helper
-    isHelperActive = false;
-    helper.style.top = '-50px';
     getPosts();
   }
+  // clear helper
+  isHelperActive = false;
+  helper.style.top = '-50px';
 });
