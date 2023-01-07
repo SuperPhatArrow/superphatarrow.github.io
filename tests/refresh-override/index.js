@@ -29,7 +29,8 @@ let isHelperActive = false;
 
 const moveHelperTip = (num) => {
   isHelperActive = true;
-  helper.style.transform = `translateY(100px) translateX(0px)`;
+  helper.style.transform = `translateY(100px)`;
+  helper.style.transform += `translateX(0px)`;
 };
 
 document.addEventListener('touchstart', (e) => {
@@ -52,7 +53,8 @@ document.addEventListener('touchmove', (e) => {
   if (atTopOfPage && !isSwipeDown && isSmallGesture && isHelperActive) {
     // clear helper
     isHelperActive = false;
-    helper.style.top = '-50px';
+    helper.style.transform = `translateY(-100px)`;
+    helper.style.transform += `translateX(0px)`;
   }
 });
 
@@ -71,4 +73,5 @@ document.addEventListener('touchend', (e) => {
   // clear helper
   isHelperActive = false;
   helper.style.transform = `translateY(-100px)`;
+  helper.style.transform += `translateX(0px)`;
 });
