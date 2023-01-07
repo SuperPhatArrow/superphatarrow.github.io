@@ -29,7 +29,7 @@ body {
   height: 30px;
   width: 80px;
   top: -50px;
-  left: calc(50%+40px);
+  left: calc(50% + 40px);
   /* -webkit-transform: translateX(-50%);
   transform: translateX(-50%); */
   background-color: darkred;

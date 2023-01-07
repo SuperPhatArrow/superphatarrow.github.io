@@ -26,6 +26,7 @@ const helper = document.getElementById('helper');
 let touchstartY = 0;
 let touchendY = 0;
 let isHelperActive = false;
+let startedAtTop = false;
 
 const moveHelperTip = (num) => {
   isHelperActive = true;
@@ -34,10 +35,13 @@ const moveHelperTip = (num) => {
 };
 
 document.addEventListener('touchstart', (e) => {
+  startedAtTop = scrollY === 0;
   touchstartY = e.changedTouches[0].screenY;
 });
 
 document.addEventListener('touchmove', (e) => {
+  // if we didn't start at the top, do nothing
+  if (!startedAtTop) return;
   touchendY = e.changedTouches[0].screenY;
   // only when at the top of the page
   const atTopOfPage = scrollY === 0;
@@ -59,6 +63,8 @@ document.addEventListener('touchmove', (e) => {
 });
 
 document.addEventListener('touchend', (e) => {
+  // if we didn't start at the top, do nothing
+  if (!startedAtTop) return;
   touchendY = e.changedTouches[0].screenY;
   // only when at the top of the page
   const atTopOfPage = scrollY === 0;
