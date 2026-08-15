@@ -1,203 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dice Demo · glm-5-2</title>
-    <style>
-        :root {
-            --face: #f7f3e9;
-            --pip: #2b2b2b;
-            --accent: #6c5ce7;
-        }
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitcoin Seed · 100 Dice Entropy</title>
+<style>
+  :root{
+    --bg0:#0c0e16;
+    --bg1:#171a2b;
+    --card:rgba(255,255,255,0.045);
+    --border:rgba(255,255,255,0.09);
+    --ink:#eef0f7;
+    --muted:#9aa0b4;
+    --accent:#f7931a;
+    --accent2:#ffc266;
+    --face:#f6f1e3;
+    --pip:#222;
+    --die:clamp(30px,7.6vw,46px);
+    --gap:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 560px at 50% -12%, rgba(247,147,26,0.12), transparent 60%),
+      linear-gradient(160deg,var(--bg0),var(--bg1));
+    min-height:100vh;
+    padding:clamp(18px,4vw,40px) 16px 56px;
+  }
+  .wrap{max-width:560px;margin:0 auto}
 
-        * { box-sizing: border-box; }
+  header{text-align:center;margin-bottom:20px}
+  h1{margin:0;font-size:clamp(1.3rem,4.6vw,1.85rem);font-weight:700;letter-spacing:-0.01em}
+  .sub{margin:9px auto 0;max-width:30rem;color:var(--muted);font-size:.9rem;line-height:1.55}
+  .sub b{color:var(--accent2)}
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #1e1b2e 0%, #2d2640 100%);
-            color: #f5f5f5;
-            padding: 1.5rem;
-        }
+  .stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0 20px}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:.76rem;color:var(--muted)}
+  .stat b{color:var(--ink);font-variant-numeric:tabular-nums}
 
-        h1 {
-            margin: 0;
-            font-size: 1.6rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-        }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(10,1fr);
+    gap:var(--gap);
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:14px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+  }
+  .die{
+    width:100%;
+    aspect-ratio:1/1;
+    background:var(--face);
+    border-radius:18%;
+    display:grid;
+    grid-template:repeat(3,1fr)/repeat(3,1fr);
+    padding:11%;
+    gap:2px;
+    box-shadow:0 3px 6px rgba(0,0,0,.4), inset 0 0 0 1px rgba(0,0,0,.06);
+    transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  }
+  .die.rolling{animation:tumble .8s ease-in-out;will-change:transform}
+  @keyframes tumble{
+    0%{transform:rotateX(0)rotateY(0)rotateZ(0)}
+    50%{transform:rotateX(360deg)rotateY(180deg)rotateZ(90deg)scale(1.08)}
+    100%{transform:rotateX(720deg)rotateY(360deg)rotateZ(180deg)}
+  }
+  .pip{width:18%;height:18%;border-radius:50%;background:var(--pip);align-self:center;justify-self:center;opacity:0}
+  .f1 .pip:nth-child(5){opacity:1}
+  .f2 .pip:nth-child(1),.f2 .pip:nth-child(9){opacity:1}
+  .f3 .pip:nth-child(1),.f3 .pip:nth-child(5),.f3 .pip:nth-child(9){opacity:1}
+  .f4 .pip:nth-child(1),.f4 .pip:nth-child(3),.f4 .pip:nth-child(7),.f4 .pip:nth-child(9){opacity:1}
+  .f5 .pip:nth-child(1),.f5 .pip:nth-child(3),.f5 .pip:nth-child(5),.f5 .pip:nth-child(7),.f5 .pip:nth-child(9){opacity:1}
+  .f6 .pip:nth-child(1),.f6 .pip:nth-child(3),.f6 .pip:nth-child(4),.f6 .pip:nth-child(6),.f6 .pip:nth-child(7),.f6 .pip:nth-child(9){opacity:1}
 
-        .subtitle {
-            margin: -1rem 0 0;
-            opacity: 0.6;
-            font-size: 0.85rem;
-        }
+  .entropy{margin:18px 0 4px}
+  .entropy .bar{height:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;overflow:hidden}
+  .entropy .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 0 12px rgba(247,147,26,.5);transition:width .2s ease}
+  .entropy .lbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:7px;font-variant-numeric:tabular-nums}
 
-        .dice-stage {
-            perspective: 600px;
-        }
+  .controls{display:flex;justify-content:center;margin:18px 0 6px}
+  button{
+    font:inherit;font-weight:700;font-size:1rem;
+    color:#1a1206;
+    background:linear-gradient(180deg,var(--accent2),var(--accent));
+    border:none;border-radius:12px;
+    padding:.82rem 1.9rem;cursor:pointer;
+    box-shadow:0 8px 22px rgba(247,147,26,.38), inset 0 1px 0 rgba(255,255,255,.45);
+    transition:transform .1s,filter .2s;
+  }
+  button:hover{filter:brightness(1.05)}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.55;cursor:wait}
 
-        .dice {
-            width: 120px;
-            height: 120px;
-            background: var(--face);
-            border-radius: 18px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            padding: 14px;
-            gap: 6px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45),
-                        inset 0 0 0 2px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        .dice.rolling {
-            animation: tumble 0.9s ease-in-out;
-        }
-
-        @keyframes tumble {
-            0%   { transform: rotateX(0)    rotateY(0)    rotateZ(0); }
-            50%  { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg) scale(1.05); }
-            100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
-        }
-
-        .pip {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--pip);
-            align-self: center;
-            justify-self: center;
-            opacity: 0;
-        }
-
-        /* Pip placement for each face value (1-6) */
-        .face-1 .pip:nth-child(5) { opacity: 1; }
-
-        .face-2 .pip:nth-child(1),
-        .face-2 .pip:nth-child(9) { opacity: 1; }
-
-        .face-3 .pip:nth-child(1),
-        .face-3 .pip:nth-child(5),
-        .face-3 .pip:nth-child(9) { opacity: 1; }
-
-        .face-4 .pip:nth-child(1),
-        .face-4 .pip:nth-child(3),
-        .face-4 .pip:nth-child(7),
-        .face-4 .pip:nth-child(9) { opacity: 1; }
-
-        .face-5 .pip:nth-child(1),
-        .face-5 .pip:nth-child(3),
-        .face-5 .pip:nth-child(5),
-        .face-5 .pip:nth-child(7),
-        .face-5 .pip:nth-child(9) { opacity: 1; }
-
-        .face-6 .pip:nth-child(1),
-        .face-6 .pip:nth-child(3),
-        .face-6 .pip:nth-child(4),
-        .face-6 .pip:nth-child(6),
-        .face-6 .pip:nth-child(7),
-        .face-6 .pip:nth-child(9) { opacity: 1; }
-
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        button {
-            font: inherit;
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 0.7rem 1.6rem;
-            border: none;
-            border-radius: 10px;
-            background: var(--accent);
-            color: #fff;
-            cursor: pointer;
-            transition: transform 0.1s ease, filter 0.2s ease;
-        }
-
-        button:hover { filter: brightness(1.1); }
-        button:active { transform: translateY(1px); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .result {
-            font-size: 0.95rem;
-            opacity: 0.85;
-            min-height: 1.2em;
-        }
-
-        .result strong { color: #ffeaa7; }
-    </style>
+  .out{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:18px}
+  .out h2{margin:0 0 8px;font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .concat{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92rem;line-height:1.6;word-break:break-all;color:var(--ink);min-height:1.6em}
+  .concat span{transition:color .5s ease}
+  .concat span.new{color:var(--accent2)}
+  .seed-row{display:flex;align-items:flex-start;gap:10px;margin-top:6px}
+  .seed{flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.95rem;line-height:1.5;word-break:break-all;color:var(--accent2);text-shadow:0 0 18px rgba(247,147,26,.45);min-height:1.2em}
+  .copy{flex:none;font-size:.76rem;font-weight:600;color:var(--ink);background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:8px;padding:7px 11px;cursor:pointer;align-self:center}
+  .copy:hover{background:rgba(255,255,255,.13)}
+  .foot{margin:18px auto 0;max-width:32rem;text-align:center;font-size:.72rem;color:var(--muted);line-height:1.7}
+  .foot code{background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .foot b{color:var(--accent2)}
+</style>
 </head>
 <body>
-    <h1>🎲 Dice Demo</h1>
-    <p class="subtitle">glm-5-2</p>
+  <div class="wrap">
+    <header>
+      <h1>🎲 Bitcoin Seed from 100 Dice</h1>
+      <p class="sub">Roll 100 six-sided dice, concatenate the results into a string, and hash it with <b>SHA-256</b> to derive a wallet seed &mdash; just like the manual entropy ceremony.</p>
+    </header>
 
-    <div class="dice-stage">
-        <div class="dice face-1" id="dice">
-            <span class="pip"></span><span class="pip"></span><span class="pip"></span>
-            <span class="pip"></span><span class="pip"></span><span class="pip"></span>
-            <span class="pip"></span><span class="pip"></span><span class="pip"></span>
-        </div>
+    <div class="stats">
+      <div class="stat">Dice: <b>100</b></div>
+      <div class="stat">Outcomes: <b>6¹⁰⁰</b></div>
+      <div class="stat">Entropy: <b id="entBits">0.00</b> bits</div>
+      <div class="stat">Target: <b>256-bit</b></div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="entropy">
+      <div class="bar"><div class="fill" id="entFill"></div></div>
+      <div class="lbl"><span>0 bits</span><span>258.50 bits</span></div>
     </div>
 
     <div class="controls">
-        <button id="roll" type="button">Roll</button>
+      <button id="roll" type="button">Roll 100 Dice</button>
     </div>
 
-    <p class="result" id="result">Press <strong>Roll</strong> to begin.</p>
+    <div class="out">
+      <h2>Concatenated Dice Rolls</h2>
+      <div class="concat" id="concat"></div>
+      <h2 style="margin-top:16px">SHA-256 &rarr; Seed</h2>
+      <div class="seed-row">
+        <div class="seed" id="seed"></div>
+        <button class="copy" id="copy" type="button">Copy</button>
+      </div>
+    </div>
 
-    <script>
-        (function () {
-            const dice = document.getElementById('dice');
-            const rollBtn = document.getElementById('roll');
-            const result = document.getElementById('result');
-            let rolling = false;
+    <p class="foot">
+      Dice values use <code>crypto.getRandomValues</code> for true randomness &middot;
+      seed = <code>SHA256(diceString)</code> via the Web Crypto API &middot;
+      100 dice &asymp; <b>258.50</b> bits of entropy (exceeds 256-bit security).
+    </p>
+  </div>
 
-            function setFace(value) {
-                dice.className = 'dice face-' + value;
-            }
+<script>
+(function(){
+  "use strict";
+  const N = 100;
+  const LOG2_6 = Math.log2(6);            // 2.5849625...
+  const MAX_BITS = N * LOG2_6;           // 258.49625...
 
-            function roll() {
-                if (rolling) return;
-                rolling = true;
-                rollBtn.disabled = true;
-                result.textContent = 'Rolling...';
+  const grid    = document.getElementById('grid');
+  const rollBtn = document.getElementById('roll');
+  const concatEl = document.getElementById('concat');
+  const seedEl  = document.getElementById('seed');
+  const entFill = document.getElementById('entFill');
+  const entBits = document.getElementById('entBits');
+  const copyBtn = document.getElementById('copy');
 
-                dice.classList.add('rolling');
+  // ---- build the 10x10 grid of dice -------------------------------------
+  const dice = [];
+  for (let i = 0; i < N; i++) {
+    const d = document.createElement('div');
+    d.className = 'die f' + randFace();
+    for (let p = 0; p < 9; p++) {
+      const s = document.createElement('span');
+      s.className = 'pip';
+      d.appendChild(s);
+    }
+    grid.appendChild(d);
+    dice.push(d);
+  }
 
-                // flicker through random faces during the tumble
-                const flicker = setInterval(() => {
-                    setFace(Math.floor(Math.random() * 6) + 1);
-                }, 80);
+  // ---- randomness --------------------------------------------------------
+  function randFace(){ return Math.floor(Math.random() * 6) + 1; }       // visual flicker
 
-                setTimeout(() => {
-                    clearInterval(flicker);
-                    const value = Math.floor(Math.random() * 6) + 1;
-                    setFace(value);
-                    dice.classList.remove('rolling');
-                    result.innerHTML = 'You rolled a <strong>' + value + '</strong>.';
-                    rolling = false;
-                    rollBtn.disabled = false;
-                }, 900);
-            }
+  function cryptoFaces(n){                                               // true-random finals
+    const a = new Uint32Array(n);
+    crypto.getRandomValues(a);
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) out[i] = (a[i] % 6) + 1;                 // bias ~ 1 in 1e9, negligible
+    return out;
+  }
 
-            rollBtn.addEventListener('click', roll);
-            document.addEventListener('keydown', (e) => {
-                if (e.code === 'Space') { e.preventDefault(); roll(); }
-            });
-        })();
-    </script>
+  function setFace(i, v){
+    const d = dice[i];
+    d.classList.remove('f1','f2','f3','f4','f5','f6');
+    d.classList.add('f' + v);
+  }
+
+  // ---- SHA-256 of the concatenated dice string ---------------------------
+  async function sha256Hex(str){
+    const data = new TextEncoder().encode(str);
+    const buf  = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function typeWrite(el, text, delay){
+    return new Promise(res => {
+      el.textContent = '';
+      let i = 0;
+      (function step(){
+        el.textContent = text.slice(0, i);
+        i++;
+        if (i <= text.length) setTimeout(step, delay); else res();
+      })();
+    });
+  }
+
+  // ---- the roll ceremony -------------------------------------------------
+  let rolling = false;
+  let lastDigits = '';
+
+  async function roll(){
+    if (rolling) return;
+    rolling = true; rollBtn.disabled = true; rollBtn.textContent = 'Rolling…';
+    concatEl.textContent = ''; seedEl.textContent = ''; lastDigits = '';
+    entFill.style.width = '0%'; entBits.textContent = '0.00';
+    copyBtn.textContent = 'Copy';
+
+    const values  = cryptoFaces(N);
+    const settled = new Array(N).fill(false);
+
+    for (let i = 0; i < N; i++){
+      dice[i].classList.add('rolling');
+      setFace(i, randFace());
+    }
+
+    const start = performance.now();
+    const stagger = 16;   // ms between each die settling
+    const rollDur = 800;  // tumble duration per die
+    let lastFlicker = 0;
+    const digits = [];
+
+    await new Promise(resolve => {
+      function tick(now){
+        const elapsed = now - start;
+        const doFlicker = (now - lastFlicker) > 65;
+        if (doFlicker) lastFlicker = now;
+
+        let allSettled = true;
+        for (let i = 0; i < N; i++){
+          if (settled[i]) continue;
+          const settleAt = i * stagger + rollDur;
+          if (elapsed >= settleAt){
+            settled[i] = true;
+            dice[i].classList.remove('rolling');
+            setFace(i, values[i]);
+
+            // stream the digit into the concatenated string, highlighted
+            digits.push(values[i]);
+            const span = document.createElement('span');
+            span.className = 'new';
+            span.textContent = values[i];
+            concatEl.appendChild(span);
+            requestAnimationFrame(() => span.classList.remove('new'));
+
+            // live entropy meter
+            const bits = digits.length * LOG2_6;
+            entBits.textContent = bits.toFixed(2);
+            entFill.style.width = (bits / MAX_BITS * 100).toFixed(2) + '%';
+          } else {
+            allSettled = false;
+            if (doFlicker) setFace(i, randFace());
+          }
+        }
+        if (allSettled) resolve();
+        else requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+
+    // hash the concatenated string and reveal the seed
+    lastDigits = digits.join('');
+    const seed = await sha256Hex(lastDigits);
+    await typeWrite(seedEl, seed, 16);
+
+    rolling = false; rollBtn.disabled = false; rollBtn.textContent = 'Roll 100 Dice';
+  }
+
+  // ---- events ------------------------------------------------------------
+  rollBtn.addEventListener('click', roll);
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'Enter'){ e.preventDefault(); roll(); }
+  });
+  copyBtn.addEventListener('click', async () => {
+    const t = seedEl.textContent;
+    if (!t) return;
+    try { await navigator.clipboard.writeText(t); copyBtn.textContent = 'Copied!'; }
+    catch { copyBtn.textContent = 'Press ⌘C'; }
+    setTimeout(() => copyBtn.textContent = 'Copy', 1400);
+  });
+})();
+</script>
 </body>
 </html>
