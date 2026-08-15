@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dice Demo · glm-5-2</title>
+    <style>
+        :root {
+            --face: #f7f3e9;
+            --pip: #2b2b2b;
+            --accent: #6c5ce7;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #1e1b2e 0%, #2d2640 100%);
+            color: #f5f5f5;
+            padding: 1.5rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            margin: -1rem 0 0;
+            opacity: 0.6;
+            font-size: 0.85rem;
+        }
+
+        .dice-stage {
+            perspective: 600px;
+        }
+
+        .dice {
+            width: 120px;
+            height: 120px;
+            background: var(--face);
+            border-radius: 18px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 14px;
+            gap: 6px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45),
+                        inset 0 0 0 2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .dice.rolling {
+            animation: tumble 0.9s ease-in-out;
+        }
+
+        @keyframes tumble {
+            0%   { transform: rotateX(0)    rotateY(0)    rotateZ(0); }
+            50%  { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg) scale(1.05); }
+            100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+        }
+
+        .pip {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--pip);
+            align-self: center;
+            justify-self: center;
+            opacity: 0;
+        }
+
+        /* Pip placement for each face value (1-6) */
+        .face-1 .pip:nth-child(5) { opacity: 1; }
+
+        .face-2 .pip:nth-child(1),
+        .face-2 .pip:nth-child(9) { opacity: 1; }
+
+        .face-3 .pip:nth-child(1),
+        .face-3 .pip:nth-child(5),
+        .face-3 .pip:nth-child(9) { opacity: 1; }
+
+        .face-4 .pip:nth-child(1),
+        .face-4 .pip:nth-child(3),
+        .face-4 .pip:nth-child(7),
+        .face-4 .pip:nth-child(9) { opacity: 1; }
+
+        .face-5 .pip:nth-child(1),
+        .face-5 .pip:nth-child(3),
+        .face-5 .pip:nth-child(5),
+        .face-5 .pip:nth-child(7),
+        .face-5 .pip:nth-child(9) { opacity: 1; }
+
+        .face-6 .pip:nth-child(1),
+        .face-6 .pip:nth-child(3),
+        .face-6 .pip:nth-child(4),
+        .face-6 .pip:nth-child(6),
+        .face-6 .pip:nth-child(7),
+        .face-6 .pip:nth-child(9) { opacity: 1; }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        button {
+            font: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.7rem 1.6rem;
+            border: none;
+            border-radius: 10px;
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.2s ease;
+        }
+
+        button:hover { filter: brightness(1.1); }
+        button:active { transform: translateY(1px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .result {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            min-height: 1.2em;
+        }
+
+        .result strong { color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🎲 Dice Demo</h1>
+    <p class="subtitle">glm-5-2</p>
+
+    <div class="dice-stage">
+        <div class="dice face-1" id="dice">
+            <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+            <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+            <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="roll" type="button">Roll</button>
+    </div>
+
+    <p class="result" id="result">Press <strong>Roll</strong> to begin.</p>
+
+    <script>
+        (function () {
+            const dice = document.getElementById('dice');
+            const rollBtn = document.getElementById('roll');
+            const result = document.getElementById('result');
+            let rolling = false;
+
+            function setFace(value) {
+                dice.className = 'dice face-' + value;
+            }
+
+            function roll() {
+                if (rolling) return;
+                rolling = true;
+                rollBtn.disabled = true;
+                result.textContent = 'Rolling...';
+
+                dice.classList.add('rolling');
+
+                // flicker through random faces during the tumble
+                const flicker = setInterval(() => {
+                    setFace(Math.floor(Math.random() * 6) + 1);
+                }, 80);
+
+                setTimeout(() => {
+                    clearInterval(flicker);
+                    const value = Math.floor(Math.random() * 6) + 1;
+                    setFace(value);
+                    dice.classList.remove('rolling');
+                    result.innerHTML = 'You rolled a <strong>' + value + '</strong>.';
+                    rolling = false;
+                    rollBtn.disabled = false;
+                }, 900);
+            }
+
+            rollBtn.addEventListener('click', roll);
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') { e.preventDefault(); roll(); }
+            });
+        })();
+    </script>
+</body>
+</html>
