@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entropy Rite — 100 Dice → SHA-256 Seed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --void: #070708;
+      --ink: #0d0d10;
+      --panel: #121216;
+      --line: rgba(212, 175, 88, 0.16);
+      --gold: #d4af58;
+      --gold-soft: #e8c97a;
+      --gold-dim: #8a7040;
+      --btc: #f7931a;
+      --ivory: #f3ead7;
+      --mute: #8a8478;
+      --ok: #7dcea0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: var(--void);
+      color: var(--ivory);
+      font-family: Outfit, system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    body {
+      background:
+        radial-gradient(1200px 700px at 50% -10%, rgba(247, 147, 26, 0.07), transparent 55%),
+        radial-gradient(800px 500px at 100% 100%, rgba(212, 175, 88, 0.05), transparent 50%),
+        var(--void);
+    }
+
+    #dust {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.55) 100%);
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      opacity: 0.07;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 22px 80px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 22px;
+    }
+
+    .mark {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .sigil {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--gold);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--gold);
+      font-family: "Cormorant Garamond", serif;
+      font-size: 22px;
+      font-weight: 600;
+      box-shadow: 0 0 24px rgba(212, 175, 88, 0.15);
+    }
+
+    h1 {
+      font-family: "Cormorant Garamond", serif;
+      font-weight: 500;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--gold-soft);
+      font-weight: 400;
+    }
+
+    .sub {
+      margin-top: 6px;
+      color: var(--mute);
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .meta {
+      text-align: right;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      color: var(--mute);
+      line-height: 1.7;
+    }
+
+    .meta b { color: var(--gold); font-weight: 500; }
+
+    .stage-wrap {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 920px) {
+      .stage-wrap { grid-template-columns: 1fr; }
+      header { flex-direction: column; align-items: flex-start; }
+      .meta { text-align: left; }
+    }
+
+    .board {
+      background: linear-gradient(180deg, rgba(20,20,24,0.9), rgba(10,10,12,0.95));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .board::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(212,175,88,0.05), transparent 40%);
+      pointer-events: none;
+    }
+
+    .board-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+
+    .board-top h2 {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--gold-soft);
+    }
+
+    .counter {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      color: var(--mute);
+    }
+
+    .counter span { color: var(--ivory); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 8px;
+    }
+
+    @media (max-width: 560px) {
+      .grid { gap: 5px; }
+    }
+
+    .die {
+      aspect-ratio: 1;
+      border-radius: 18%;
+      background:
+        radial-gradient(120% 80% at 20% 15%, rgba(255,255,255,0.16), transparent 42%),
+        linear-gradient(160deg, #1c1c22, #0c0c0e);
+      border: 1px solid rgba(212, 175, 88, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        0 6px 14px rgba(0,0,0,0.35);
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    .die.idle { opacity: 0.55; }
+    .die.rolling {
+      animation: tumble 0.55s cubic-bezier(.2,.7,.2,1);
+      border-color: rgba(247, 147, 26, 0.55);
+      box-shadow: 0 0 16px rgba(247,147,26,0.18);
+    }
+    .die.settled {
+      opacity: 1;
+      border-color: rgba(212, 175, 88, 0.45);
+      animation: settle 0.35s cubic-bezier(.2,1.4,.3,1);
+    }
+    .die.extract {
+      animation: lift 0.7s ease forwards;
+    }
+
+    @keyframes tumble {
+      0% { transform: rotateX(0deg) rotateY(0deg) scale(1); filter: blur(0); }
+      35% { transform: rotateX(48deg) rotateY(-70deg) scale(0.86); filter: blur(1.4px); }
+      70% { transform: rotateX(-28deg) rotateY(50deg) scale(1.06); filter: blur(0.6px); }
+      100% { transform: rotateX(0) rotateY(0) scale(1); filter: blur(0); }
+    }
+
+    @keyframes settle {
+      0% { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes lift {
+      0% { transform: translateY(0); filter: none; }
+      40% { transform: translateY(-6px); filter: drop-shadow(0 0 8px rgba(212,175,88,0.4)); }
+      100% { transform: translateY(0); }
+    }
+
+    .pips {
+      position: absolute;
+      inset: 16%;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+    }
+
+    .pip {
+      width: 28%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff6d6, var(--gold) 45%, #8a6420);
+      box-shadow: 0 0 6px rgba(212,175,88,0.35);
+      justify-self: center;
+      align-self: center;
+      opacity: 0;
+      transform: scale(0.4);
+    }
+
+    .die.settled .pip.on,
+    .die.rolling .pip.on {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .die.idle .pip { opacity: 0; }
+
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 16px 14px;
+    }
+
+    .card h3 {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 8px;
+    }
+
+    .entropy {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      line-height: 1.65;
+      color: var(--ivory);
+      word-break: break-all;
+      min-height: 5.8em;
+    }
+
+    .entropy .ghost { color: #3a3832; }
+    .entropy .live { color: var(--gold-soft); }
+
+    .bits {
+      margin-top: 10px;
+      height: 4px;
+      background: #1b1b20;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .bits > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--btc), var(--gold));
+      transition: width 0.25s ease;
+    }
+
+    .bits-lab {
+      margin-top: 6px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 10px;
+      color: var(--mute);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .hash-box {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      line-height: 1.7;
+      min-height: 4.8em;
+      color: var(--ivory);
+      word-break: break-all;
+    }
+
+    .hash-box .pending { color: #3a3832; }
+    .hash-box .glyph {
+      display: inline-block;
+      animation: glyphIn 0.18s ease both;
+    }
+
+    @keyframes glyphIn {
+      from { opacity: 0; transform: translateY(6px); color: var(--btc); }
+      to { opacity: 1; transform: none; color: var(--ivory); }
+    }
+
+    .seed-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .seed-card.ready {
+      border-color: rgba(212,175,88,0.45);
+      box-shadow: 0 0 40px rgba(212,175,88,0.08);
+    }
+
+    .seed-label {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 22px;
+      color: var(--gold-soft);
+      margin-bottom: 6px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    button {
+      font-family: Outfit, sans-serif;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .btn {
+      flex: 1;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #f0d48a, #c4922d);
+      color: #1a1408;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 12px;
+      box-shadow: 0 8px 24px rgba(212,175,88,0.18);
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; filter: grayscale(0.3); }
+
+    .ghost-btn {
+      flex: 0 0 auto;
+      padding: 0 14px;
+      height: 42px;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--line);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .ghost-btn:hover { border-color: var(--gold); }
+
+    .rite {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 920px) {
+      .rite { grid-template-columns: 1fr; }
+    }
+
+    .poem {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 20px;
+      line-height: 1.45;
+      color: #cfc6b0;
+    }
+
+    .poem i { color: var(--gold-soft); font-style: italic; }
+
+    .tech {
+      font-size: 12px;
+      color: var(--mute);
+      line-height: 1.7;
+    }
+
+    .tech code {
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--gold-soft);
+      font-size: 11px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1b1a16;
+      border: 1px solid var(--gold);
+      color: var(--gold-soft);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.3s ease;
+      z-index: 10;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .status {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      color: var(--mute);
+      min-height: 1.4em;
+    }
+
+    .status.ok { color: var(--ok); }
+  </style>
+</head>
+<body>
+  <canvas id="dust"></canvas>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+
+  <div class="app">
+    <header>
+      <div class="mark">
+        <div class="sigil">₿</div>
+        <div>
+          <h1>The Entropy <em>Rite</em></h1>
+          <div class="sub">One hundred dice · two hundred fifty-eight bits · one seed</div>
+        </div>
+      </div>
+      <div class="meta">
+        source <b>CSPRNG</b> · crypto.getRandomValues<br />
+        fold <b>SHA-256</b> · crypto.subtle.digest<br />
+        bias-free dice · reject ≥ 252
+      </div>
+    </header>
+
+    <div class="stage-wrap">
+      <section class="board">
+        <div class="board-top">
+          <h2>The hundred</h2>
+          <div class="counter"><span id="settled">0</span> / 100 settled</div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </section>
+
+      <aside class="side">
+        <div class="card">
+          <h3>Concatenated faces</h3>
+          <div class="entropy" id="entropy"></div>
+          <div class="bits"><i id="bar"></i></div>
+          <div class="bits-lab">
+            <span id="bitlab">0.00 bits</span>
+            <span>log₂(6) × n ≈ 258.50</span>
+          </div>
+        </div>
+
+        <div class="card seed-card" id="seedCard">
+          <h3>Wallet seed · SHA-256</h3>
+          <div class="seed-label" id="seedTitle">Awaiting the throw</div>
+          <div class="hash-box" id="hash">
+            <span class="pending">0000000000000000000000000000000000000000000000000000000000000000</span>
+          </div>
+          <div class="status" id="status">Press roll. Space also works.</div>
+          <div class="actions">
+            <button class="btn" id="roll">Roll 100 dice</button>
+            <button class="ghost-btn" id="copy" disabled>Copy</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="rite">
+      <p class="poem">
+        One hundred cubes of chance, thrown in the dark.<br />
+        Their faces become a number with no author.<br />
+        Hash it once, and the river <i>forgets its stones</i> —
+        only the seed remains.
+      </p>
+      <p class="tech">
+        Each die is uniform on {1…6} via rejection sampling of a CSPRNG byte.
+        The decimal faces are concatenated as a UTF-8 string
+        (<code>"146322653…1253"</code>) and digested with
+        <code>SHA-256</code>. Output is 32 bytes / 256 bits of wallet entropy —
+        generated entirely in your browser. Nothing is transmitted.
+      </p>
+    </section>
+  </div>
+
+  <div class="toast" id="toast">Seed copied</div>
+
+  <script>
+    const PIP_MAP = {
+      1: [4],
+      2: [0, 8],
+      3: [0, 4, 8],
+      4: [0, 2, 6, 8],
+      5: [0, 2, 4, 6, 8],
+      6: [0, 2, 3, 5, 6, 8]
+    };
+
+    const grid = document.getElementById("grid");
+    const entropyEl = document.getElementById("entropy");
+    const bar = document.getElementById("bar");
+    const bitlab = document.getElementById("bitlab");
+    const settledEl = document.getElementById("settled");
+    const hashEl = document.getElementById("hash");
+    const statusEl = document.getElementById("status");
+    const rollBtn = document.getElementById("roll");
+    const copyBtn = document.getElementById("copy");
+    const seedCard = document.getElementById("seedCard");
+    const seedTitle = document.getElementById("seedTitle");
+    const toast = document.getElementById("toast");
+
+    const dice = [];
+    let faces = Array(100).fill(0);
+    let seedHex = "";
+    let busy = false;
+
+    function makeDie(i) {
+      const el = document.createElement("div");
+      el.className = "die idle";
+      el.dataset.i = i;
+      const pips = document.createElement("div");
+      pips.className = "pips";
+      for (let p = 0; p < 9; p++) {
+        const pip = document.createElement("i");
+        pip.className = "pip";
+        pips.appendChild(pip);
+      }
+      el.appendChild(pips);
+      grid.appendChild(el);
+      dice.push(el);
+    }
+
+    for (let i = 0; i < 100; i++) makeDie(i);
+
+    function paintDie(el, n) {
+      const pips = el.querySelectorAll(".pip");
+      const on = new Set(PIP_MAP[n] || []);
+      pips.forEach((p, i) => p.classList.toggle("on", on.has(i)));
+    }
+
+    function rollFairDie() {
+      const buf = new Uint8Array(1);
+      let x;
+      do {
+        crypto.getRandomValues(buf);
+        x = buf[0];
+      } while (x >= 252);
+      return (x % 6) + 1;
+    }
+
+    function renderEntropy(prefix, ghostLen) {
+      const ghost = "·".repeat(ghostLen);
+      entropyEl.innerHTML =
+        `<span class="live">${esc(prefix)}</span><span class="ghost">${ghost}</span>`;
+    }
+
+    function esc(s) {
+      return s.replace(/[&<>]/g, c => ({ "&": "&", "<": "<", ">": ">" }[c]));
+    }
+
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    async function sha256Hex(text) {
+      const data = new TextEncoder().encode(text);
+      const buf = await crypto.subtle.digest("SHA-256", data);
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function revealHash(hex) {
+      hashEl.innerHTML = "";
+      [...hex].forEach((ch, i) => {
+        const s = document.createElement("span");
+        s.className = "glyph";
+        s.textContent = ch;
+        s.style.animationDelay = `${i * 18}ms`;
+        hashEl.appendChild(s);
+      });
+    }
+
+    async function rite() {
+      if (busy) return;
+      busy = true;
+      rollBtn.disabled = true;
+      copyBtn.disabled = true;
+      seedCard.classList.remove("ready");
+      seedTitle.textContent = "The throw";
+      seedHex = "";
+      faces = Array(100).fill(0);
+      hashEl.innerHTML = `<span class="pending">${"0".repeat(64)}</span>`;
+      statusEl.className = "status";
+      statusEl.textContent = "Gathering unbiased faces…";
+
+      dice.forEach(d => {
+        d.className = "die idle";
+      });
+      renderEntropy("", 100);
+      bar.style.width = "0%";
+      bitlab.textContent = "0.00 bits";
+      settledEl.textContent = "0";
+
+      const finals = Array.from({ length: 100 }, () => rollFairDie());
+
+      const wave = [];
+      for (let i = 0; i < 100; i++) {
+        const row = Math.floor(i / 10);
+        const col = i % 10;
+        wave.push({ i, delay: row * 55 + col * 18 });
+      }
+
+      await Promise.all(wave.map(({ i, delay }) => tumbleOne(i, delay, finals[i])));
+
+      const concat = finals.join("");
+      dice.forEach(d => d.classList.add("extract"));
+      seedTitle.textContent = "Folding the river";
+      statusEl.textContent = "SHA-256 over the concatenated decimal string…";
+
+      await sleep(420);
+      const hex = await sha256Hex(concat);
+      seedHex = hex;
+      revealHash(hex);
+
+      await sleep(64 * 18 + 120);
+      seedTitle.textContent = "256-bit seed";
+      statusEl.className = "status ok";
+      statusEl.textContent = "Verified in-browser. Ready to copy.";
+      seedCard.classList.add("ready");
+      copyBtn.disabled = false;
+      rollBtn.disabled = false;
+      rollBtn.textContent = "Throw again";
+      busy = false;
+    }
+
+    function tumbleOne(i, delay, final) {
+      return new Promise(resolve => {
+        setTimeout(async () => {
+          const el = dice[i];
+          el.className = "die rolling";
+          const spins = 7 + (i % 5);
+          for (let s = 0; s < spins; s++) {
+            paintDie(el, 1 + Math.floor(Math.random() * 6));
+            await sleep(42 + s * 6);
+          }
+          faces[i] = final;
+          paintDie(el, final);
+          el.className = "die settled";
+
+          const done = faces.filter(Boolean);
+          const concat = done.join("");
+          renderEntropy(concat, 100 - done.length);
+          const bits = done.length * Math.log2(6);
+          bar.style.width = `${(done.length / 100) * 100}%`;
+          bitlab.textContent = `${bits.toFixed(2)} bits`;
+          settledEl.textContent = String(done.length);
+          resolve();
+        }, delay);
+      });
+    }
+
+    rollBtn.addEventListener("click", rite);
+    window.addEventListener("keydown", e => {
+      if (e.code === "Space" && !e.repeat) {
+        e.preventDefault();
+        rite();
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!seedHex) return;
+      try {
+        await navigator.clipboard.writeText(seedHex);
+        toast.textContent = "Seed copied";
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 1600);
+      } catch {
+        toast.textContent = "Copy failed";
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 1600);
+      }
+    });
+
+    renderEntropy("", 100);
+
+    const canvas = document.getElementById("dust");
+    const ctx = canvas.getContext("2d");
+    const motes = [];
+
+    function resize() {
+      canvas.width = innerWidth * devicePixelRatio;
+      canvas.height = innerHeight * devicePixelRatio;
+      canvas.style.width = innerWidth + "px";
+      canvas.style.height = innerHeight + "px";
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    }
+    resize();
+    addEventListener("resize", resize);
+
+    for (let i = 0; i < 60; i++) {
+      motes.push({
+        x: Math.random() * innerWidth,
+        y: Math.random() * innerHeight,
+        r: Math.random() * 1.4 + 0.3,
+        v: Math.random() * 0.25 + 0.05,
+        a: Math.random() * 0.35 + 0.05
+      });
+    }
+
+    function dust() {
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      for (const m of motes) {
+        m.y -= m.v;
+        if (m.y < -4) {
+          m.y = innerHeight + 4;
+          m.x = Math.random() * innerWidth;
+        }
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(232, 201, 122, ${m.a})`;
+        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      requestAnimationFrame(dust);
+    }
+    dust();
+  </script>
+</body>
+</html>
