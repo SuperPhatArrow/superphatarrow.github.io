@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>₿ Dice Entropy · Bitcoin Seed Generator</title>
+<style>
+  :root{
+    --bg:#0a0e14;
+    --bg2:#0d1220;
+    --gold:#f7931a;
+    --gold2:#ffb347;
+    --ink:#e8ecf3;
+    --dim:#8b95a8;
+    --line:rgba(255,255,255,.08);
+    --green:#3ddc84;
+    --pip:#12161f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:
+      radial-gradient(1200px 700px at 15% -10%, #16233b 0%, transparent 55%),
+      radial-gradient(1000px 600px at 100% 0%, #1c1710 0%, transparent 50%),
+      linear-gradient(160deg,var(--bg),var(--bg2));
+    color:var(--ink);
+    min-height:100%;
+    overflow-x:hidden;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:26px 22px}
+
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  .logo{
+    width:54px;height:54px;border-radius:16px;flex:none;
+    background:linear-gradient(135deg,var(--gold),var(--gold2));
+    display:grid;place-items:center;color:#1a1206;font-weight:800;font-size:30px;
+    box-shadow:0 10px 30px rgba(247,147,26,.35), inset 0 2px 6px rgba(255,255,255,.4);
+  }
+  h1{font-size:26px;letter-spacing:.3px;font-weight:700}
+  h1 span{color:var(--gold)}
+  .sub{color:var(--dim);font-size:13.5px;margin-top:3px;max-width:640px;line-height:1.5}
+
+  .panel{
+    margin-top:22px;background:rgba(255,255,255,.025);
+    border:1px solid var(--line);border-radius:20px;padding:20px;
+    backdrop-filter:blur(6px);
+  }
+
+  .bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+  button{
+    font-family:inherit;cursor:pointer;border:none;border-radius:12px;
+    padding:12px 22px;font-size:14.5px;font-weight:700;letter-spacing:.3px;
+    transition:transform .12s ease, box-shadow .2s ease, opacity .2s;
+    color:#1a1206;background:linear-gradient(135deg,var(--gold),var(--gold2));
+    box-shadow:0 8px 22px rgba(247,147,26,.3);
+  }
+  button.ghost{
+    background:transparent;color:var(--ink);border:1px solid var(--line);
+    box-shadow:none;
+  }
+  button:hover{transform:translateY(-2px)}
+  button:active{transform:translateY(0)}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+  .stats{margin-left:auto;display:flex;gap:26px;flex-wrap:wrap}
+  .stat{text-align:right}
+  .stat b{display:block;font-size:22px;font-weight:800;color:var(--gold)}
+  .stat small{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+
+  .progress{height:6px;border-radius:6px;background:rgba(255,255,255,.06);margin-top:16px;overflow:hidden}
+  .progress i{display:block;height:100%;width:0;border-radius:6px;
+    background:linear-gradient(90deg,var(--gold),var(--gold2));
+    transition:width .3s ease;box-shadow:0 0 12px rgba(247,147,26,.6)}
+
+  /* Dice grid */
+  .grid{
+    margin-top:22px;
+    display:grid;
+    grid-template-columns:repeat(20,1fr);
+    gap:9px;
+  }
+  @media(max-width:900px){.grid{grid-template-columns:repeat(10,1fr)}}
+  @media(max-width:520px){.grid{grid-template-columns:repeat(6,1fr)}}
+
+  .scene{perspective:520px;aspect-ratio:1;}
+  .die{
+    width:100%;height:100%;position:relative;transform-style:preserve-3d;
+    transition:transform .1s;
+  }
+  .die .face{
+    position:absolute;inset:0;border-radius:22%;
+    background:linear-gradient(145deg,#fbfbfd,#dfe3ea);
+    border:1px solid rgba(0,0,0,.15);
+    box-shadow:inset 0 2px 4px rgba(255,255,255,.9), inset 0 -3px 6px rgba(0,0,0,.15);
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+    padding:14%;gap:2%;
+    backface-visibility:hidden;
+  }
+  .scene{--sz:34px}
+  .face .pip{width:100%;height:100%;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#3a4152,var(--pip));
+    align-self:center;justify-self:center;visibility:hidden;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.25);
+  }
+  /* pip layout positions in 3x3 */
+  .p1{grid-area:1/1} .p2{grid-area:1/2} .p3{grid-area:1/3}
+  .p4{grid-area:2/1} .p5{grid-area:2/2} .p6{grid-area:2/3}
+  .p7{grid-area:3/1} .p8{grid-area:3/2} .p9{grid-area:3/3}
+
+  .die .rolling{animation:none}
+  @keyframes spin{
+    0%{transform:rotateX(0) rotateY(0)}
+    100%{transform:rotateX(720deg) rotateY(1080deg)}
+  }
+
+  .scene.new .die{animation:pop .45s ease}
+  @keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+  .idx{position:absolute;top:-6px;left:-4px;font-size:9px;color:var(--dim);
+    background:rgba(0,0,0,.35);border-radius:5px;padding:1px 4px;z-index:5;pointer-events:none}
+
+  /* Output area */
+  .out{margin-top:26px;display:grid;grid-template-columns:1fr;gap:18px}
+  .block{background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .block h3{font-size:12px;text-transform:uppercase;letter-spacing:1.4px;color:var(--dim);
+    margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .block h3 .copy{cursor:pointer;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:none;font-size:12px}
+  .mono{font-family:'SFMono-Regular',ui-monospace,'Cascadia Mono',Consolas,monospace;
+    word-break:break-all;line-height:1.7;font-size:13.5px}
+  .rolls-str{color:#bcd;}
+  .seed{color:var(--green);font-size:15px;letter-spacing:.5px}
+  .seed.empty{color:var(--dim)}
+  .hashing{color:var(--gold);animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.4}}
+
+  .bitsbar{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .bitsbar .lab{font-size:12px;color:var(--dim)}
+  .note{color:var(--dim);font-size:12px;margin-top:14px;line-height:1.6}
+  .note code{color:var(--gold2);background:rgba(247,147,26,.1);padding:1px 6px;border-radius:5px}
+  .flash{animation:flash .6s ease}
+  @keyframes flash{0%{background:rgba(61,220,132,.18)}100%{background:rgba(0,0,0,.28)}}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--green);color:#062;padding:10px 20px;border-radius:10px;font-weight:700;
+    opacity:0;transition:.3s;pointer-events:none;z-index:99}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">₿</div>
+    <div>
+      <h1>Dice <span>Entropy</span> Forge</h1>
+      <div class="sub">Roll 100 physical-style dice to gather ≥256 bits of entropy. Digits are concatenated and hashed with <b>SHA‑256</b> (WebCrypto) to derive a Bitcoin wallet seed.</div>
+    </div>
+  </header>
+
+  <div class="panel">
+    <div class="bar">
+      <button id="roll">🎲 Roll 100 Dice</button>
+      <button id="rollOne" class="ghost">+1 Die</button>
+      <button id="reset" class="ghost">Reset</button>
+      <div class="stats">
+        <div class="stat"><b id="cnt">0</b><small>Dice Rolled</small></div>
+        <div class="stat"><b id="bits">0</b><small>Bits Entropy</small></div>
+        <div class="stat"><b id="secStat">—</b><small>Security</small></div>
+      </div>
+    </div>
+    <div class="progress"><i id="pbar"></i></div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="out">
+      <div class="block">
+        <h3>Concatenated Roll String <span class="copy" data-c="rollStr">copy</span></h3>
+        <div class="mono rolls-str" id="rollStr">—</div>
+      </div>
+      <div class="block" id="seedBlock">
+        <h3>Wallet Seed · SHA‑256(rolls) <span class="copy" data-c="seed">copy</span></h3>
+        <div class="mono seed empty" id="seed">Roll the dice to generate a seed…</div>
+        <div class="bitsbar"><span class="lab">Entropy target: 256 bits (≈100 dice)</span></div>
+      </div>
+      <div class="note">
+        Each 6‑sided die contributes about <code>log₂(6) ≈ 2.585</code> bits. 100 dice → ~258 bits of entropy,
+        comfortably above the 256‑bit target. Randomness here uses your mouse/CPU timing for the demo; for a real
+        wallet, roll <b>actual physical dice</b> and never trust a webpage with your funds.
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">Copied ✓</div>
+
+<script>
+const N = 100;
+const grid = document.getElementById('grid');
+const dice = [];      // {el, die, value}
+const rolls = [];     // numeric values (1-6)
+
+// pip patterns per face value
+const PIPS = {
+  1:[5], 2:[1,9], 3:[1,5,9], 4:[1,3,7,9],
+  5:[1,3,5,7,9], 6:[1,3,4,6,7,9]
+};
+
+function buildDie(i){
+  const scene = document.createElement('div');
+  scene.className = 'scene new';
+  scene.innerHTML = `<span class="idx">${i+1}</span>`;
+  const die = document.createElement('div');
+  die.className = 'die';
+  const face = document.createElement('div');
+  face.className = 'face';
+  for(let p=1;p<=9;p++){
+    const pip=document.createElement('div');
+    pip.className='pip p'+p;
+    face.appendChild(pip);
+  }
+  die.appendChild(face);
+  scene.appendChild(die);
+  grid.appendChild(scene);
+  const rec = {scene, die, face, value:0};
+  dice.push(rec);
+  setTimeout(()=>scene.classList.remove('new'), 460);
+  return rec;
+}
+
+function setFace(rec, v){
+  rec.value = v;
+  const on = new Set(PIPS[v]);
+  [...rec.face.children].forEach((pip,idx)=>{
+    pip.style.visibility = on.has(idx+1) ? 'visible':'hidden';
+  });
+}
+
+// Cryptographically strong die roll (unbiased 1-6)
+function secureDie(){
+  const buf = new Uint8Array(1);
+  let x;
+  do { crypto.getRandomValues(buf); x = buf[0]; } while (x >= 252); // 252 = 6*42
+  return (x % 6) + 1;
+}
+
+// init grid
+for(let i=0;i<N;i++) buildDie(i);
+
+let rolling = false;
+
+function animateRoll(rec, finalVal, delay, dur){
+  return new Promise(res=>{
+    setTimeout(()=>{
+      const start = performance.now();
+      const rx = 360*(2+Math.random()*2), ry=360*(3+Math.random()*2);
+      let last=-1;
+      function frame(t){
+        const k = Math.min(1,(t-start)/dur);
+        const e = 1-Math.pow(1-k,3); // easeOutCubic
+        rec.die.style.transform =
+          `rotateX(${rx*e}deg) rotateY(${ry*e}deg) scale(${1+.12*Math.sin(k*Math.PI)})`;
+        // flicker face while spinning
+        if(k<0.85){
+          const step = Math.floor(t/60);
+          if(step!==last){ last=step; setFace(rec, 1+Math.floor(Math.random()*6)); }
+        }
+        if(k<1){ requestAnimationFrame(frame); }
+        else {
+          rec.die.style.transform='rotateX(0) rotateY(0) scale(1)';
+          setFace(rec, finalVal);
+          res();
+        }
+      }
+      requestAnimationFrame(frame);
+    }, delay);
+  });
+}
+
+function updateStats(count){
+  document.getElementById('cnt').textContent = count;
+  const bitsVal = +(count*Math.log2(6)).toFixed(1);
+  document.getElementById('bits').textContent = count? bitsVal : 0;
+  document.getElementById('pbar').style.width = Math.min(100, count/N*100)+'%';
+  const sec = document.getElementById('secStat');
+  if(count===0) sec.textContent='—';
+  else if(bitsVal<128) sec.textContent='Low';
+  else if(bitsVal<256) sec.textContent='Good';
+  else sec.textContent='Strong';
+  sec.style.color = bitsVal>=256 ? 'var(--green)' : bitsVal>=128 ? 'var(--gold2)' : '#e66';
+}
+
+function updateRollString(){
+  const s = rolls.join('');
+  document.getElementById('rollStr').textContent = s || '—';
+  return s;
+}
+
+async function computeSeed(){
+  const s = rolls.join('');
+  const seedEl = document.getElementById('seed');
+  if(!s){ seedEl.textContent='Roll the dice to generate a seed…'; seedEl.classList.add('empty'); return; }
+  seedEl.classList.remove('empty');
+  seedEl.classList.add('hashing');
+  seedEl.textContent='hashing '+rolls.length+' rolls with SHA‑256…';
+  const data = new TextEncoder().encode(s);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  const hex = [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  seedEl.classList.remove('hashing');
+  seedEl.textContent = hex;
+  const blk = document.getElementById('seedBlock');
+  blk.classList.remove('flash'); void blk.offsetWidth; blk.classList.add('flash');
+}
+
+async function rollAll(){
+  if(rolling) return;
+  rolling = true;
+  rolls.length = 0;
+  document.getElementById('roll').disabled = true;
+  document.getElementById('rollOne').disabled = true;
+  const seedEl = document.getElementById('seed');
+  seedEl.classList.add('empty'); seedEl.textContent='rolling…';
+
+  // pre-generate all secure results
+  const results = Array.from({length:N}, ()=>secureDie());
+  const tasks = [];
+  for(let i=0;i<N;i++){
+    const delay = (i%20)*22 + Math.floor(i/20)*90;   // wave cascade
+    tasks.push(
+      animateRoll(dice[i], results[i], delay, 900+Math.random()*400)
+        .then(()=>{
+          rolls[i]=results[i];
+          const done = rolls.filter(Boolean).length;
+          updateStats(done);
+        })
+    );
+  }
+  await Promise.all(tasks);
+  updateRollString();
+  updateStats(N);
+  await computeSeed();
+  document.getElementById('roll').disabled = false;
+  document.getElementById('rollOne').disabled = false;
+  rolling = false;
+}
+
+function rollOne(){
+  if(rolling) return;
+  if(rolls.length>=N){ toast('All 100 dice already rolled'); return; }
+  const i = rolls.length;
+  const v = secureDie();
+  animateRoll(dice[i], v, 0, 800).then(()=>{
+    rolls[i]=v;
+    updateStats(rolls.length);
+    updateRollString();
+    computeSeed();
+  });
+}
+
+function reset(){
+  if(rolling) return;
+  rolls.length=0;
+  dice.forEach(r=>{ r.value=0; [...r.face.children].forEach(p=>p.style.visibility='hidden'); });
+  updateStats(0);
+  document.getElementById('rollStr').textContent='—';
+  const seedEl=document.getElementById('seed');
+  seedEl.classList.add('empty'); seedEl.textContent='Roll the dice to generate a seed…';
+}
+
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1400);
+}
+
+document.getElementById('roll').onclick = rollAll;
+document.getElementById('rollOne').onclick = rollOne;
+document.getElementById('reset').onclick = reset;
+
+document.querySelectorAll('.copy').forEach(c=>{
+  c.onclick=()=>{
+    const el=document.getElementById(c.dataset.c);
+    const txt=el.textContent;
+    if(!txt||el.classList.contains('empty')||txt==='—') return;
+    navigator.clipboard.writeText(txt).then(()=>toast('Copied ✓'));
+  };
+});
+
+updateStats(0);
+</script>
+</body>
+</html>
