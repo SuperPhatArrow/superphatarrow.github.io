@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100 Dice → SHA-256 · Bitcoin Entropy Lab</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+<style>
+:root{
+  --bg:#07090f;
+  --panel:rgba(16,21,34,.72);
+  --line:rgba(255,255,255,.08);
+  --orange:#f7931a;
+  --orange2:#ffb347;
+  --text:#e9edf6;
+  --dim:#8b93a7;
+  --mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif;
+  overflow-x:hidden;
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, rgba(247,147,26,.08), transparent 60%),
+    radial-gradient(800px 500px at 85% 110%, rgba(80,120,255,.07), transparent 60%);
+}
+
+/* floating ambient orbs */
+.orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.35;pointer-events:none;z-index:0}
+.orb.a{width:420px;height:420px;background:#f7931a;top:-140px;left:-120px;animation:drift 26s ease-in-out infinite alternate}
+.orb.b{width:360px;height:360px;background:#3b5bff;bottom:-140px;right:-100px;animation:drift 32s ease-in-out infinite alternate-reverse}
+.orb.c{width:220px;height:220px;background:#ff5e7e;top:45%;left:60%;opacity:.18;animation:drift 40s ease-in-out infinite alternate}
+@keyframes drift{
+  from{transform:translate(0,0) scale(1)}
+  to{transform:translate(60px,40px) scale(1.15)}
+}
+
+.wrap{position:relative;z-index:1;max-width:940px;margin:0 auto;padding:56px 20px 48px}
+
+/* header */
+header{text-align:center;margin-bottom:34px}
+.badge{
+  display:inline-block;font-size:12px;letter-spacing:.22em;font-weight:700;
+  color:var(--orange2);border:1px solid rgba(247,147,26,.35);
+  padding:7px 14px;border-radius:999px;margin-bottom:18px;
+  background:rgba(247,147,26,.07);
+}
+h1{font-size:clamp(28px,5.4vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+h1 .arrow{color:var(--dim);font-weight:400;margin:0 .1em}
+.grad{
+  background:linear-gradient(92deg,var(--orange2),var(--orange) 55%,#ff7a00);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sub{margin-top:14px;color:var(--dim);font-size:clamp(13px,2.4vw,16px);line-height:1.55}
+.sub b{color:var(--orange2)}
+
+/* panels */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:22px;
+  margin-bottom:20px;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 20px 50px rgba(0,0,0,.35);
+}
+
+/* steps */
+.steps{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.step{
+  flex:1;min-width:120px;display:flex;align-items:center;gap:9px;
+  font-size:11px;letter-spacing:.16em;font-weight:700;color:var(--dim);
+  border:1px solid var(--line);border-radius:12px;padding:9px 12px;
+  transition:all .3s ease;
+}
+.step i{
+  font-style:normal;width:20px;height:20px;border-radius:50%;
+  display:grid;place-items:center;font-size:11px;
+  background:rgba(255,255,255,.08);color:var(--dim);flex:none;
+  transition:all .3s ease;
+}
+.step.active{color:var(--orange2);border-color:rgba(247,147,26,.5);box-shadow:0 0 18px rgba(247,147,26,.15) inset}
+.step.active i{background:var(--orange);color:#1a1206}
+.step.done{color:#7ee2a0;border-color:rgba(126,226,160,.25)}
+.step.done i{background:rgba(126,226,160,.18);color:#7ee2a0}
+
+/* dice grid */
+.dice-grid{
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  gap:clamp(5px,1.1vw,10px);
+}
+.die{
+  width:100%;aspect-ratio:1;
+  background:linear-gradient(145deg,#ffffff,#d9dee8);
+  border-radius:20%;
+  display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);
+  padding:14%;
+  box-shadow:0 3px 8px rgba(0,0,0,.45), inset 0 -2px 4px rgba(0,0,0,.12), inset 0 2px 2px rgba(255,255,255,.7);
+  transition:transform .15s ease, box-shadow .2s ease;
+  will-change:transform;
+}
+.die:hover{transform:translateY(-3px)}
+.pip{
+  width:72%;aspect-ratio:1;place-self:center;border-radius:50%;
+  background:transparent;
+}
+.pip.on{background:radial-gradient(circle at 35% 30%,#3a4052,#141826)}
+
+.die.rolling{
+  animation:tumble .45s linear infinite;
+  box-shadow:0 0 14px rgba(247,147,26,.55), 0 3px 8px rgba(0,0,0,.45);
+}
+@keyframes tumble{
+  0%{transform:rotate(0deg) scale(1)}
+  25%{transform:rotate(calc(90deg*var(--dir,1))) scale(.8)}
+  50%{transform:rotate(calc(180deg*var(--dir,1))) scale(1.08)}
+  75%{transform:rotate(calc(270deg*var(--dir,1))) scale(.88)}
+  100%{transform:rotate(calc(360deg*var(--dir,1))) scale(1)}
+}
+.die.settled{animation:pop .38s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{
+  0%{transform:scale(1.3)}
+  55%{transform:scale(.92)}
+  100%{transform:scale(1)}
+}
+
+/* entropy meter */
+.entropy{margin-top:20px}
+.entropy-top{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:11px;letter-spacing:.14em;color:var(--dim);margin-bottom:8px;
+}
+.entropy-top b{
+  font-family:var(--mono);font-size:15px;color:var(--orange2);
+  letter-spacing:0;font-variant-numeric:tabular-nums;
+}
+.bar{
+  height:10px;border-radius:999px;background:rgba(255,255,255,.07);
+  overflow:hidden;border:1px solid var(--line);
+}
+.fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#ff7a00,var(--orange2));
+  border-radius:999px;
+  box-shadow:0 0 12px rgba(247,147,26,.6);
+  transition:width .18s ease-out;
+}
+
+/* controls */
+.controls{display:flex;align-items:center;gap:16px;margin-top:22px;flex-wrap:wrap}
+#rollBtn{
+  border:none;cursor:pointer;
+  font-size:15px;font-weight:800;letter-spacing:.12em;
+  color:#1a1206;
+  padding:15px 30px;border-radius:999px;
+  background:linear-gradient(135deg,var(--orange2),var(--orange) 60%,#ff7a00);
+  box-shadow:0 8px 24px rgba(247,147,26,.35), inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+#rollBtn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 30px rgba(247,147,26,.5)}
+#rollBtn:active:not(:disabled){transform:translateY(0) scale(.98)}
+#rollBtn:disabled{filter:grayscale(.5) brightness(.7);cursor:wait}
+.status{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--dim)}
+.status.pulse{animation:pulse 1s ease-in-out infinite;color:var(--orange2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* section labels */
+.label{font-size:11px;letter-spacing:.2em;font-weight:700;color:var(--text);margin-bottom:14px}
+.label .hint{color:var(--dim);font-weight:400;letter-spacing:.06em;text-transform:none}
+
+/* digit stream */
+.stream{
+  display:flex;flex-wrap:wrap;gap:3px;
+  font-family:var(--mono);font-size:clamp(11px,2.2vw,15px);
+  line-height:1.4;
+}
+.digit{color:rgba(255,255,255,.14);transition:color .2s}
+.digit.lit{color:var(--orange2);animation:digitPop .35s cubic-bezier(.2,1.6,.4,1);text-shadow:0 0 10px rgba(247,147,26,.5)}
+@keyframes digitPop{0%{transform:scale(1.9);color:#fff}100%{transform:scale(1)}}
+
+/* seed output */
+.panel.seed{text-align:center}
+.panel.seed .label{text-align:left}
+.hex{
+  font-family:var(--mono);
+  font-size:clamp(13px,2.8vw,21px);
+  font-weight:600;
+  word-break:break-all;
+  line-height:1.7;
+  letter-spacing:.06em;
+  padding:18px 14px;
+  border-radius:14px;
+  background:rgba(0,0,0,.35);
+  border:1px dashed rgba(247,147,26,.25);
+  min-height:2.4em;
+}
+.hex .placeholder{color:var(--dim);font-weight:400;font-style:italic;font-size:.85em}
+.hex .scramble{color:rgba(255,255,255,.22)}
+.hex .lock{color:#ffd9a0}
+.hex.final .lock,
+.hex.final{
+  color:transparent;
+}
+.hex.final{
+  background-image:linear-gradient(92deg,#ffe3b0,var(--orange2) 40%,var(--orange) 70%,#ff7a00);
+  -webkit-background-clip:text;background-clip:text;
+  border-style:solid;
+  animation:seedGlow 2.6s ease-in-out infinite;
+}
+.hex.final .lock{color:inherit}
+@keyframes seedGlow{
+  0%,100%{box-shadow:0 0 0 rgba(247,147,26,0)}
+  50%{box-shadow:0 0 34px rgba(247,147,26,.28)}
+}
+#copyBtn{
+  margin-top:14px;
+  background:transparent;
+  border:1px solid rgba(247,147,26,.45);
+  color:var(--orange2);
+  font-size:11px;font-weight:700;letter-spacing:.18em;
+  padding:10px 22px;border-radius:999px;cursor:pointer;
+  transition:all .2s ease;
+}
+#copyBtn:hover{background:rgba(247,147,26,.12);transform:translateY(-1px)}
+
+footer{
+  text-align:center;color:var(--dim);font-size:12px;line-height:1.8;
+  padding:8px 12px 0;
+}
+footer sup{font-size:9px}
+
+@media (max-width:560px){
+  .wrap{padding-top:36px}
+  .panel{padding:16px;border-radius:16px}
+  .controls{justify-content:center}
+  .status{width:100%;text-align:center}
+}
+@media (prefers-reduced-motion:reduce){
+  .die.rolling{animation:none}
+  .orb{animation:none}
+  .hex.final{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="orb a"></div>
+<div class="orb b"></div>
+<div class="orb c"></div>
+
+<main class="wrap">
+  <header>
+    <div class="badge">₿&nbsp; BITCOIN ENTROPY LAB</div>
+    <h1>100 Dice <span class="arrow">→</span> <span class="grad">SHA-256 Seed</span></h1>
+    <p class="sub">Roll 100 dice, concatenate the faces into one string, hash it once.<br>
+    Offline-grade, verifiable wallet entropy — <b>≈ 258.5 bits</b>.</p>
+  </header>
+
+  <section class="panel">
+    <div class="steps">
+      <div class="step" id="st1"><i>1</i><span>ROLL</span></div>
+      <div class="step" id="st2"><i>2</i><span>CONCATENATE</span></div>
+      <div class="step" id="st3"><i>3</i><span>SHA-256</span></div>
+    </div>
+
+    <div class="dice-grid" id="diceGrid"></div>
+
+    <div class="entropy">
+      <div class="entropy-top">
+        <span>ENTROPY COLLECTED</span>
+        <span><b id="bits">0.0</b> / 258.5 bits</span>
+      </div>
+      <div class="bar"><div class="fill" id="barFill"></div></div>
+    </div>
+
+    <div class="controls">
+      <button id="rollBtn"><span>🎲&nbsp; ROLL 100 DICE</span></button>
+      <div class="status" id="status">READY</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="label">DIGIT STREAM <span class="hint">— 100 rolls concatenated into one string</span></div>
+    <div class="stream" id="digitStream"></div>
+  </section>
+
+  <section class="panel seed">
+    <div class="label">WALLET SEED <span class="hint">— SHA-256 hex output · 256 bits</span></div>
+    <div class="hex" id="hexOut"><span class="placeholder">awaiting entropy…</span></div>
+    <button id="copyBtn" hidden>COPY SEED</button>
+  </section>
+
+  <footer>
+    6<sup>100</sup> ≈ 6.5 × 10<sup>77</sup> possible outcomes &nbsp;·&nbsp; each die ≈ 2.585 bits &nbsp;·&nbsp; 100% client-side via WebCrypto
+  </footer>
+</main>
+
+<script>
+(() => {
+'use strict';
+const N = 100;
+const BITS_PER = Math.log2(6); // 2.5849625007...
+const PIPS = {1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
+const $ = id => document.getElementById(id);
+const grid=$('diceGrid'), stream=$('digitStream'), hexOut=$('hexOut'),
+      bitsEl=$('bits'), fill=$('barFill'), btn=$('rollBtn'), btnTxt=btn.querySelector('span'),
+      statusEl=$('status'), copyBtn=$('copyBtn');
+const steps=[$('st1'),$('st2'),$('st3')];
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const dice=[], digitEls=[];
+function setFace(d,v){
+  const on=PIPS[v], p=d.children;
+  for(let k=1;k<=9;k++) p[k-1].classList.toggle('on', on.includes(k));
+}
+for(let i=0;i<N;i++){
+  const d=document.createElement('div'); d.className='die';
+  for(let k=0;k<9;k++){ const s=document.createElement('span'); s.className='pip'; d.appendChild(s); }
+  setFace(d, 1+Math.floor(Math.random()*6));
+  grid.appendChild(d); dice.push(d);
+  const g=document.createElement('span'); g.className='digit'; g.textContent='\u00b7';
+  stream.appendChild(g); digitEls.push(g);
+}
+
+function setStep(n){ steps.forEach((s,i)=>{ s.classList.toggle('active', i===n); s.classList.toggle('done', i<n); }); }
+
+async function sha256hex(str){
+  if(window.crypto && crypto.subtle && crypto.subtle.digest){
+    const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  return sha256Sync(str); // pure-JS fallback
+}
+
+function revealHex(hex){
+  return new Promise(res=>{
+    hexOut.innerHTML='';
+    const lock=document.createElement('span'); lock.className='lock';
+    const scr=document.createElement('span'); scr.className='scramble';
+    hexOut.append(lock,scr);
+    const CH='0123456789abcdef';
+    let i=0;
+    const iv=setInterval(()=>{
+      i++;
+      lock.textContent=hex.slice(0,i);
+      let t='';
+      for(let k=0;k<Math.min(6,hex.length-i);k++) t+=CH[Math.floor(Math.random()*16)];
+      scr.textContent=t;
+      if(i>=hex.length){ clearInterval(iv); scr.textContent=''; hexOut.classList.add('final'); res(); }
+    }, reduced?2:16);
+  });
+}
+
+let rolling=false, lastHex='';
+async function roll(){
+  if(rolling) return; rolling=true;
+  btn.disabled=true; copyBtn.hidden=true; lastHex='';
+  hexOut.classList.remove('final');
+  hexOut.innerHTML='<span class="placeholder">awaiting entropy\u2026</span>';
+  digitEls.forEach(g=>{ g.textContent='\u00b7'; g.classList.remove('lit'); });
+  bitsEl.textContent='0.0'; fill.style.width='0%';
+  setStep(0);
+  statusEl.textContent='ROLLING\u2026'; statusEl.classList.add('pulse');
+
+  let settled=0;
+  const results=new Array(N);
+  await Promise.all(dice.map((d,i)=>new Promise(done=>{
+    setTimeout(()=>{
+      d.classList.remove('settled');
+      d.classList.add('rolling');
+      d.style.setProperty('--dir', Math.random()<0.5?-1:1);
+      const iv=setInterval(()=>setFace(d, 1+Math.floor(Math.random()*6)), 70);
+      setTimeout(()=>{
+        clearInterval(iv);
+        const v=1+Math.floor(Math.random()*6);
+        setFace(d,v); results[i]=v;
+        d.classList.remove('rolling'); d.classList.add('settled');
+        const g=digitEls[i]; g.textContent=v; g.classList.add('lit');
+        settled++;
+        bitsEl.textContent=(settled*BITS_PER).toFixed(1);
+        fill.style.width=(settled/N*100)+'%';
+        if(settled===N) setStep(1);
+        setTimeout(done,30);
+      }, (reduced?80:650)+Math.random()*(reduced?40:1100));
+    }, reduced?0:i*8+Math.random()*120);
+  })));
+
+  setStep(1);
+  const str=results.join('');
+  await new Promise(r=>setTimeout(r, reduced?30:350));
+  setStep(2);
+  statusEl.textContent='SHA-256 HASHING\u2026';
+  const hex=await sha256hex(str);
+  lastHex=hex;
+  await revealHex(hex);
+  setStep(3); // marks all done
+  statusEl.textContent='SEED READY \u00b7 256 BITS \u2713';
+  statusEl.classList.remove('pulse');
+  copyBtn.hidden=false;
+  btn.disabled=false; rolling=false;
+  btnTxt.innerHTML='\ud83c\udfb2&nbsp; ROLL AGAIN';
+}
+btn.addEventListener('click', roll);
+
+copyBtn.addEventListener('click', async ()=>{
+  if(!lastHex) return;
+  try{ await navigator.clipboard.writeText(lastHex); }
+  catch(e){
+    const ta=document.createElement('textarea'); ta.value=lastHex;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+  copyBtn.textContent='COPIED \u2713';
+  setTimeout(()=>copyBtn.textContent='COPY SEED', 1400);
+});
+
+/* Pure-JS SHA-256 fallback (only used if WebCrypto is unavailable) */
+function sha256Sync(str){
+  const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  const H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const bytes=new TextEncoder().encode(str), l=bytes.length;
+  const msg=new Uint8Array(Math.ceil((l+9)/64)*64);
+  msg.set(bytes); msg[l]=0x80;
+  const dv=new DataView(msg.buffer);
+  dv.setUint32(msg.length-8, Math.floor(l*8/4294967296));
+  dv.setUint32(msg.length-4, (l*8)>>>0);
+  const w=new Int32Array(64);
+  const rotr=(x,n)=>(x>>>n)|(x<<(32-n));
+  for(let off=0;off<msg.length;off+=64){
+    for(let t=0;t<16;t++) w[t]=dv.getInt32(off+t*4);
+    for(let t=16;t<64;t++){
+      const s0=rotr(w[t-15],7)^rotr(w[t-15],18)^(w[t-15]>>>3);
+      const s1=rotr(w[t-2],17)^rotr(w[t-2],19)^(w[t-2]>>>10);
+      w[t]=(w[t-16]+s0+w[t-7]+s1)|0;
+    }
+    let a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(let t=0;t<64;t++){
+      const S1=rotr(e,6)^rotr(e,11)^rotr(e,25);
+      const ch=(e&f)^(~e&g);
+      const t1=(h+S1+ch+K[t]+w[t])|0;
+      const S0=rotr(a,2)^rotr(a,13)^rotr(a,22);
+      const maj=(a&b)^(a&c)^(b&c);
+      const t2=(S0+maj)|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;
+    }
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;
+    H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  return H.map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');
+}
+})();
+</script>
+</body>
+</html>
