@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dice Demo Collection — 100 Dice → Bitcoin Seed</title>
+<style>
+  :root {
+    --bg: #090b0e;
+    --bg2: #11151a;
+    --gold: #f7931a;
+    --gold2: #ffb347;
+    --ink: #f3ead6;
+    --dim: #8b95a8;
+    --line: rgba(255,255,255,.08);
+    --card: rgba(255,255,255,.035);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1100px 640px at 12% -12%, #1c2a44 0%, transparent 55%),
+      radial-gradient(900px 520px at 100% 0%, #2a1c0c 0%, transparent 50%),
+      linear-gradient(165deg, var(--bg), var(--bg2));
+    padding: 40px 22px 72px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header { margin-bottom: 32px; }
+  .kicker {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 42px);
+    letter-spacing: .2px;
+    line-height: 1.15;
+  }
+  h1 span { color: var(--gold); }
+  .sub {
+    margin-top: 12px;
+    color: var(--dim);
+    max-width: 62ch;
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  .list { display: grid; gap: 12px; }
+  a.card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px 24px;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 20px;
+    transition: transform .12s ease, border-color .2s ease, background .2s ease;
+  }
+  a.card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(247,147,26,.45);
+    background: rgba(247,147,26,.06);
+  }
+  .name { font-size: 18px; font-weight: 700; }
+  .meta { color: var(--dim); font-size: 13px; margin-top: 4px; }
+  .cost {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+  .cost small {
+    display: block;
+    text-align: right;
+    color: var(--dim);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .note {
+    margin-top: 28px;
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  @media (max-width: 560px) {
+    a.card { grid-template-columns: 1fr; }
+    .cost small { text-align: left; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">Dice Demo Collection</div>
+      <h1>100 Dice <span>→</span> SHA-256 Seed</h1>
+      <p class="sub">Each page is a self-contained take on the same ceremony: roll 100 dice, concatenate the faces, and hash with SHA-256. Costs are USD for generating that version.</p>
+    </header>
+
+    <div class="list">
+      <a class="card" href="grok-4-6.html">
+        <div>
+          <div class="name">Grok 4.6</div>
+          <div class="meta">One Hundred Dice — Bitcoin Entropy</div>
+        </div>
+        <div class="cost">$0.11<small>USD</small></div>
+      </a>
+      <a class="card" href="gpt-5-6-sol.html">
+        <div>
+          <div class="name">Sol</div>
+          <div class="meta">100 Rolls — Bitcoin Seed Ceremony · GPT 5.6</div>
+        </div>
+        <div class="cost">$0.23<small>USD</small></div>
+      </a>
+      <a class="card" href="opus-4-8.html">
+        <div>
+          <div class="name">Opus 4.8</div>
+          <div class="meta">Dice Entropy Forge · Bitcoin Seed Generator</div>
+        </div>
+        <div class="cost">$0.27<small>USD</small></div>
+      </a>
+      <a class="card" href="glm-5-2.html">
+        <div>
+          <div class="name">GLM 5.2</div>
+          <div class="meta">Dice Entropy → Bitcoin Seed</div>
+        </div>
+        <div class="cost">$0.30<small>USD</small></div>
+      </a>
+      <a class="card" href="kimi-k3.html">
+        <div>
+          <div class="name">Kimi K3</div>
+          <div class="meta">100 Dice → SHA-256 · Bitcoin Entropy Lab</div>
+        </div>
+        <div class="cost">$0.68<small>USD</small></div>
+      </a>
+      <a class="card" href="fable-5.html">
+        <div>
+          <div class="name">Fable 5</div>
+          <div class="meta">Dice Entropy — Bitcoin Seed Generator</div>
+        </div>
+        <div class="cost">$3.14<small>USD</small></div>
+      </a>
+      <a class="card" href="kimi-plan-glm-build.html">
+        <div>
+          <div class="name">Kimi plan · GLM build</div>
+          <div class="meta">Dice Entropy Ceremony — earlier collaboration</div>
+        </div>
+        <div class="cost" style="color:var(--dim);font-size:14px;font-weight:600">—<small>no cost listed</small></div>
+      </a>
+    </div>
+
+    <p class="note">Sorted by cost, low to high. All amounts in US dollars.</p>
+  </div>
+</body>
+</html>
