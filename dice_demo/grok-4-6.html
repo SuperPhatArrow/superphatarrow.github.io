@@ -3,23 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Entropy Rite — 100 Dice → SHA-256 Seed</title>
+  <title>One Hundred Dice — Bitcoin Entropy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --void: #070708;
-      --ink: #0d0d10;
-      --panel: #121216;
+      --void: #070706;
+      --ink: #0e0d0b;
+      --panel: #141310;
       --line: rgba(212, 175, 88, 0.16);
       --gold: #d4af58;
-      --gold-soft: #e8c97a;
-      --gold-dim: #8a7040;
-      --btc: #f7931a;
-      --ivory: #f3ead7;
-      --mute: #8a8478;
-      --ok: #7dcea0;
+      --gold-2: #f0d78c;
+      --gold-dim: #8a7340;
+      --ivory: #f3ead6;
+      --bone: #e7dcc0;
+      --mute: #8b8373;
+      --felt: #10261c;
+      --felt-2: #1a3a2a;
+      --danger: #c45c3e;
+      --ok: #6db38a;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,761 +37,842 @@
 
     body {
       background:
-        radial-gradient(1200px 700px at 50% -10%, rgba(247, 147, 26, 0.07), transparent 55%),
-        radial-gradient(800px 500px at 100% 100%, rgba(212, 175, 88, 0.05), transparent 50%),
+        radial-gradient(1200px 700px at 50% -10%, rgba(212, 175, 88, 0.08), transparent 55%),
+        radial-gradient(800px 500px at 100% 100%, rgba(16, 50, 36, 0.35), transparent 50%),
+        radial-gradient(700px 400px at 0% 80%, rgba(80, 40, 10, 0.18), transparent 50%),
         var(--void);
     }
 
-    #dust {
+    body::before {
+      content: "";
+      pointer-events: none;
       position: fixed;
       inset: 0;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .vignette {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 2;
-      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.55) 100%);
-    }
-
-    .grain {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 3;
-      opacity: 0.07;
-      mix-blend-mode: overlay;
+      opacity: 0.045;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      z-index: 50;
     }
 
-    .app {
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 80px;
       position: relative;
       z-index: 1;
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 28px 22px 80px;
     }
 
     header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 28px;
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 22px;
-    }
-
-    .mark {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .sigil {
-      width: 44px;
-      height: 44px;
-      border: 1px solid var(--gold);
-      border-radius: 50%;
       display: grid;
-      place-items: center;
-      color: var(--gold);
-      font-family: "Cormorant Garamond", serif;
-      font-size: 22px;
-      font-weight: 600;
-      box-shadow: 0 0 24px rgba(212, 175, 88, 0.15);
+      grid-template-columns: 1fr auto 1fr;
+      align-items: end;
+      gap: 16px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 28px;
     }
 
-    h1 {
-      font-family: "Cormorant Garamond", serif;
+    .brand {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: clamp(28px, 4vw, 44px);
       font-weight: 500;
-      font-size: clamp(28px, 4vw, 42px);
-      letter-spacing: 0.04em;
-      line-height: 1;
+      letter-spacing: 0.02em;
+      line-height: 0.95;
     }
 
-    h1 em {
+    .brand em {
       font-style: italic;
-      color: var(--gold-soft);
+      color: var(--gold-2);
       font-weight: 400;
     }
 
-    .sub {
-      margin-top: 6px;
+    .brand span {
+      display: block;
+      font-family: Outfit, sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .stats {
+      display: flex;
+      gap: 22px;
+      justify-content: flex-end;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
       color: var(--mute);
-      font-size: 12px;
-      letter-spacing: 0.22em;
+      text-align: right;
+    }
+
+    .stats b {
+      display: block;
+      color: var(--gold-2);
+      font-weight: 500;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+    }
+
+    .ritual {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 0 26px;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--mute);
+      font-size: 11px;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
     }
 
-    .meta {
-      text-align: right;
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 11px;
-      color: var(--mute);
-      line-height: 1.7;
-    }
-
-    .meta b { color: var(--gold); font-weight: 500; }
-
-    .stage-wrap {
-      display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 28px;
-      align-items: start;
-    }
-
-    @media (max-width: 920px) {
-      .stage-wrap { grid-template-columns: 1fr; }
-      header { flex-direction: column; align-items: flex-start; }
-      .meta { text-align: left; }
-    }
-
-    .board {
-      background: linear-gradient(180deg, rgba(20,20,24,0.9), rgba(10,10,12,0.95));
+    .step i {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
+      display: grid;
+      place-items: center;
+      font-family: "IBM Plex Mono", monospace;
+      font-style: normal;
+      font-size: 10px;
+      color: var(--gold-dim);
+    }
+
+    .step.on { color: var(--gold-2); }
+    .step.on i {
+      background: rgba(212, 175, 88, 0.12);
+      border-color: var(--gold);
+      color: var(--gold-2);
+      box-shadow: 0 0 18px rgba(212, 175, 88, 0.18);
+    }
+    .step.done i {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #1a1408;
+    }
+
+    .table-shell {
       position: relative;
+      border-radius: 22px;
+      padding: 22px;
+      background:
+        radial-gradient(80% 90% at 50% 0%, rgba(255, 220, 140, 0.07), transparent 50%),
+        linear-gradient(180deg, #173528 0%, #0d241a 55%, #0b1b14 100%);
+      box-shadow:
+        0 0 0 1px rgba(212, 175, 88, 0.18),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 40px 80px rgba(0, 0, 0, 0.45);
       overflow: hidden;
     }
 
-    .board::before {
+    .table-shell::after {
       content: "";
       position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(212,175,88,0.05), transparent 40%);
+      inset: 10px;
+      border-radius: 14px;
+      border: 1px dashed rgba(212, 175, 88, 0.13);
       pointer-events: none;
     }
 
-    .board-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-      padding: 0 4px;
-    }
-
-    .board-top h2 {
+    .felt-mark {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      opacity: 0.07;
       font-family: "Cormorant Garamond", serif;
-      font-size: 20px;
-      font-weight: 500;
-      color: var(--gold-soft);
+      font-size: clamp(80px, 16vw, 180px);
+      letter-spacing: 0.12em;
+      color: var(--gold-2);
     }
-
-    .counter {
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 11px;
-      color: var(--mute);
-    }
-
-    .counter span { color: var(--ivory); }
 
     .grid {
+      position: relative;
       display: grid;
       grid-template-columns: repeat(10, 1fr);
-      gap: 8px;
-    }
-
-    @media (max-width: 560px) {
-      .grid { gap: 5px; }
+      gap: clamp(6px, 1.1vw, 12px);
+      z-index: 2;
     }
 
     .die {
       aspect-ratio: 1;
-      border-radius: 18%;
-      background:
-        radial-gradient(120% 80% at 20% 15%, rgba(255,255,255,0.16), transparent 42%),
-        linear-gradient(160deg, #1c1c22, #0c0c0e);
-      border: 1px solid rgba(212, 175, 88, 0.22);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.08),
-        0 6px 14px rgba(0,0,0,0.35);
-      position: relative;
-      transform-style: preserve-3d;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      perspective: 600px;
     }
 
-    .die.idle { opacity: 0.55; }
-    .die.rolling {
-      animation: tumble 0.55s cubic-bezier(.2,.7,.2,1);
-      border-color: rgba(247, 147, 26, 0.55);
-      box-shadow: 0 0 16px rgba(247,147,26,0.18);
+    .cube {
+      width: 100%;
+      height: 100%;
+      border-radius: 18%;
+      background:
+        linear-gradient(145deg, #fff6e0 0%, #e8d7ad 42%, #cbb888 100%);
+      box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -6px 10px rgba(90, 60, 10, 0.18);
+      display: grid;
+      place-items: center;
+      transform-style: preserve-3d;
+      transition: transform 0.2s ease;
     }
-    .die.settled {
-      opacity: 1;
-      border-color: rgba(212, 175, 88, 0.45);
-      animation: settle 0.35s cubic-bezier(.2,1.4,.3,1);
+
+    .die:hover .cube { transform: translateY(-2px) scale(1.04); }
+    .die.locked { cursor: default; }
+    .die.rolling .cube {
+      animation: tumble var(--dur, 900ms) cubic-bezier(0.2, 0.7, 0.2, 1) both;
     }
-    .die.extract {
-      animation: lift 0.7s ease forwards;
+    .die.settled .cube {
+      animation: settle 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
 
     @keyframes tumble {
-      0% { transform: rotateX(0deg) rotateY(0deg) scale(1); filter: blur(0); }
-      35% { transform: rotateX(48deg) rotateY(-70deg) scale(0.86); filter: blur(1.4px); }
-      70% { transform: rotateX(-28deg) rotateY(50deg) scale(1.06); filter: blur(0.6px); }
-      100% { transform: rotateX(0) rotateY(0) scale(1); filter: blur(0); }
+      0% { transform: rotateX(0deg) rotateY(0deg) scale(1); filter: brightness(1); }
+      35% { transform: rotateX(280deg) rotateY(190deg) scale(1.12); filter: brightness(1.15); }
+      70% { transform: rotateX(520deg) rotateY(340deg) scale(0.96); }
+      100% { transform: rotateX(720deg) rotateY(360deg) scale(1); filter: brightness(1); }
     }
 
     @keyframes settle {
-      0% { transform: scale(1.12); }
+      0% { transform: scale(1.08); }
+      60% { transform: scale(0.96); }
       100% { transform: scale(1); }
     }
 
-    @keyframes lift {
-      0% { transform: translateY(0); filter: none; }
-      40% { transform: translateY(-6px); filter: drop-shadow(0 0 8px rgba(212,175,88,0.4)); }
-      100% { transform: translateY(0); }
-    }
-
     .pips {
-      position: absolute;
-      inset: 16%;
+      width: 72%;
+      height: 72%;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: 1fr 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      place-items: center;
     }
 
     .pip {
-      width: 28%;
+      width: 26%;
       aspect-ratio: 1;
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #fff6d6, var(--gold) 45%, #8a6420);
-      box-shadow: 0 0 6px rgba(212,175,88,0.35);
-      justify-self: center;
-      align-self: center;
+      background: radial-gradient(circle at 35% 30%, #4a2a18, #1a0e08 70%);
+      box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.25);
       opacity: 0;
-      transform: scale(0.4);
     }
 
-    .die.settled .pip.on,
-    .die.rolling .pip.on {
-      opacity: 1;
-      transform: scale(1);
-    }
+    .die[data-v="1"] .pip:nth-child(5),
+    .die[data-v="2"] .pip:nth-child(1),
+    .die[data-v="2"] .pip:nth-child(9),
+    .die[data-v="3"] .pip:nth-child(1),
+    .die[data-v="3"] .pip:nth-child(5),
+    .die[data-v="3"] .pip:nth-child(9),
+    .die[data-v="4"] .pip:nth-child(1),
+    .die[data-v="4"] .pip:nth-child(3),
+    .die[data-v="4"] .pip:nth-child(7),
+    .die[data-v="4"] .pip:nth-child(9),
+    .die[data-v="5"] .pip:nth-child(1),
+    .die[data-v="5"] .pip:nth-child(3),
+    .die[data-v="5"] .pip:nth-child(5),
+    .die[data-v="5"] .pip:nth-child(7),
+    .die[data-v="5"] .pip:nth-child(9),
+    .die[data-v="6"] .pip:nth-child(1),
+    .die[data-v="6"] .pip:nth-child(3),
+    .die[data-v="6"] .pip:nth-child(4),
+    .die[data-v="6"] .pip:nth-child(6),
+    .die[data-v="6"] .pip:nth-child(7),
+    .die[data-v="6"] .pip:nth-child(9) { opacity: 1; }
 
-    .die.idle .pip { opacity: 0; }
-
-    .side {
+    .actions {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin: 22px 0 8px;
+      position: relative;
+      z-index: 2;
+    }
+
+    button.cta, button.ghost {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      font-family: Outfit, sans-serif;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-size: 12px;
+      padding: 14px 22px;
+      border-radius: 999px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    button.cta {
+      background: linear-gradient(180deg, #f3dd95, #c79a3a);
+      color: #23180a;
+      font-weight: 600;
+      box-shadow: 0 10px 28px rgba(212, 175, 88, 0.22);
+    }
+
+    button.cta:hover { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(212, 175, 88, 0.3); }
+    button.cta:disabled { opacity: 0.55; cursor: wait; transform: none; }
+
+    button.ghost {
+      background: transparent;
+      color: var(--gold-2);
+      border: 1px solid rgba(212, 175, 88, 0.28);
+    }
+
+    button.ghost:hover { background: rgba(212, 175, 88, 0.08); }
+
+    .hint {
+      text-align: center;
+      color: rgba(243, 234, 214, 0.55);
+      font-size: 12px;
+      margin: 6px 0 26px;
+    }
+
+    .outputs {
+      display: grid;
       gap: 14px;
     }
 
     .card {
-      background: var(--panel);
+      background: linear-gradient(180deg, rgba(20, 19, 16, 0.92), rgba(12, 11, 9, 0.92));
       border: 1px solid var(--line);
       border-radius: 16px;
-      padding: 16px 16px 14px;
-    }
-
-    .card h3 {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--gold-dim);
-      margin-bottom: 8px;
-    }
-
-    .entropy {
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 12px;
-      line-height: 1.65;
-      color: var(--ivory);
-      word-break: break-all;
-      min-height: 5.8em;
-    }
-
-    .entropy .ghost { color: #3a3832; }
-    .entropy .live { color: var(--gold-soft); }
-
-    .bits {
-      margin-top: 10px;
-      height: 4px;
-      background: #1b1b20;
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .bits > i {
-      display: block;
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--btc), var(--gold));
-      transition: width 0.25s ease;
-    }
-
-    .bits-lab {
-      margin-top: 6px;
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 10px;
-      color: var(--mute);
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .hash-box {
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 13px;
-      letter-spacing: 0.04em;
-      line-height: 1.7;
-      min-height: 4.8em;
-      color: var(--ivory);
-      word-break: break-all;
-    }
-
-    .hash-box .pending { color: #3a3832; }
-    .hash-box .glyph {
-      display: inline-block;
-      animation: glyphIn 0.18s ease both;
-    }
-
-    @keyframes glyphIn {
-      from { opacity: 0; transform: translateY(6px); color: var(--btc); }
-      to { opacity: 1; transform: none; color: var(--ivory); }
-    }
-
-    .seed-card {
+      padding: 16px 18px 14px;
       position: relative;
       overflow: hidden;
     }
 
-    .seed-card.ready {
-      border-color: rgba(212,175,88,0.45);
-      box-shadow: 0 0 40px rgba(212,175,88,0.08);
-    }
-
-    .seed-label {
-      font-family: "Cormorant Garamond", serif;
-      font-size: 22px;
-      color: var(--gold-soft);
-      margin-bottom: 6px;
-    }
-
-    .actions {
+    .card h3 {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      font-weight: 500;
+      margin-bottom: 10px;
       display: flex;
-      gap: 8px;
-      margin-top: 12px;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    button {
+    .card h3 button {
+      appearance: none;
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--gold-2);
       font-family: Outfit, sans-serif;
-      border: 0;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 999px;
       cursor: pointer;
     }
 
-    .btn {
-      flex: 1;
-      height: 42px;
-      border-radius: 10px;
-      background: linear-gradient(180deg, #f0d48a, #c4922d);
-      color: #1a1408;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-size: 12px;
-      box-shadow: 0 8px 24px rgba(212,175,88,0.18);
-      transition: transform 0.15s ease, filter 0.15s ease;
-    }
-
-    .btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; filter: grayscale(0.3); }
-
-    .ghost-btn {
-      flex: 0 0 auto;
-      padding: 0 14px;
-      height: 42px;
-      border-radius: 10px;
-      background: transparent;
-      color: var(--gold);
-      border: 1px solid var(--line);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .ghost-btn:hover { border-color: var(--gold); }
-
-    .rite {
-      margin-top: 28px;
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 20px;
-    }
-
-    @media (max-width: 920px) {
-      .rite { grid-template-columns: 1fr; }
-    }
-
-    .poem {
-      font-family: "Cormorant Garamond", serif;
-      font-size: 20px;
-      line-height: 1.45;
-      color: #cfc6b0;
-    }
-
-    .poem i { color: var(--gold-soft); font-style: italic; }
-
-    .tech {
-      font-size: 12px;
-      color: var(--mute);
+    .tape, .hash, .words {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(11px, 1.5vw, 13px);
       line-height: 1.7;
+      word-break: break-all;
+      color: var(--bone);
+      min-height: 1.7em;
     }
 
-    .tech code {
-      font-family: "IBM Plex Mono", monospace;
-      color: var(--gold-soft);
-      font-size: 11px;
+    .tape .n {
+      display: inline-block;
+      color: var(--gold-2);
+      animation: ink 360ms ease both;
     }
 
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #1b1a16;
-      border: 1px solid var(--gold);
-      color: var(--gold-soft);
-      padding: 10px 16px;
-      border-radius: 999px;
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      opacity: 0;
-      pointer-events: none;
-      transition: 0.3s ease;
-      z-index: 10;
+    @keyframes ink {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: none; }
     }
 
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
+    .hash {
+      font-size: clamp(13px, 2vw, 18px);
+      letter-spacing: 0.04em;
+      color: var(--gold-2);
     }
 
-    .status {
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 11px;
+    .hash.scrambling {
       color: var(--mute);
-      min-height: 1.4em;
     }
 
-    .status.ok { color: var(--ok); }
+    .words {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px 12px;
+      word-break: normal;
+    }
+
+    .words span {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      background: rgba(212, 175, 88, 0.05);
+      border: 1px solid rgba(212, 175, 88, 0.08);
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
+
+    .words i {
+      font-style: normal;
+      color: var(--gold-dim);
+      font-size: 10px;
+      min-width: 1.4em;
+    }
+
+    .meta {
+      margin-top: 8px;
+      color: var(--mute);
+      font-size: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .warn {
+      margin-top: 18px;
+      color: var(--mute);
+      font-size: 12px;
+      line-height: 1.6;
+      max-width: 78ch;
+    }
+
+    .warn strong { color: #d9c59a; font-weight: 500; }
+
+    .entropy {
+      height: 4px;
+      background: rgba(212, 175, 88, 0.08);
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 14px 0 0;
+    }
+
+    .entropy > i {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #8a7340, #f0d78c);
+      transition: width 0.6s ease;
+    }
+
+    @media (max-width: 720px) {
+      header { grid-template-columns: 1fr; }
+      .stats { justify-content: flex-start; text-align: left; }
+      .words { grid-template-columns: repeat(2, 1fr); }
+      .cube { border-radius: 22%; }
+    }
   </style>
 </head>
 <body>
-  <canvas id="dust"></canvas>
-  <div class="vignette"></div>
-  <div class="grain"></div>
-
-  <div class="app">
+  <div class="wrap">
     <header>
-      <div class="mark">
-        <div class="sigil">₿</div>
-        <div>
-          <h1>The Entropy <em>Rite</em></h1>
-          <div class="sub">One hundred dice · two hundred fifty-eight bits · one seed</div>
-        </div>
+      <div class="brand">
+        <span>Bitcoin · Wallet Entropy</span>
+        One Hundred <em>Dice</em>
       </div>
-      <div class="meta">
-        source <b>CSPRNG</b> · crypto.getRandomValues<br />
-        fold <b>SHA-256</b> · crypto.subtle.digest<br />
-        bias-free dice · reject ≥ 252
+      <div></div>
+      <div class="stats">
+        <div>Dice<b id="statDice">0 / 100</b></div>
+        <div>Entropy<b id="statBits">0.00 bits</b></div>
+        <div>Output<b>SHA-256</b></div>
       </div>
     </header>
 
-    <div class="stage-wrap">
-      <section class="board">
-        <div class="board-top">
-          <h2>The hundred</h2>
-          <div class="counter"><span id="settled">0</span> / 100 settled</div>
-        </div>
-        <div class="grid" id="grid"></div>
-      </section>
-
-      <aside class="side">
-        <div class="card">
-          <h3>Concatenated faces</h3>
-          <div class="entropy" id="entropy"></div>
-          <div class="bits"><i id="bar"></i></div>
-          <div class="bits-lab">
-            <span id="bitlab">0.00 bits</span>
-            <span>log₂(6) × n ≈ 258.50</span>
-          </div>
-        </div>
-
-        <div class="card seed-card" id="seedCard">
-          <h3>Wallet seed · SHA-256</h3>
-          <div class="seed-label" id="seedTitle">Awaiting the throw</div>
-          <div class="hash-box" id="hash">
-            <span class="pending">0000000000000000000000000000000000000000000000000000000000000000</span>
-          </div>
-          <div class="status" id="status">Press roll. Space also works.</div>
-          <div class="actions">
-            <button class="btn" id="roll">Roll 100 dice</button>
-            <button class="ghost-btn" id="copy" disabled>Copy</button>
-          </div>
-        </div>
-      </aside>
+    <div class="ritual" id="ritual">
+      <div class="step on" data-step="roll"><i>1</i> Roll</div>
+      <div class="step" data-step="concat"><i>2</i> Concatenate</div>
+      <div class="step" data-step="hash"><i>3</i> Hash</div>
+      <div class="step" data-step="seed"><i>4</i> Seed</div>
     </div>
 
-    <section class="rite">
-      <p class="poem">
-        One hundred cubes of chance, thrown in the dark.<br />
-        Their faces become a number with no author.<br />
-        Hash it once, and the river <i>forgets its stones</i> —
-        only the seed remains.
-      </p>
-      <p class="tech">
-        Each die is uniform on {1…6} via rejection sampling of a CSPRNG byte.
-        The decimal faces are concatenated as a UTF-8 string
-        (<code>"146322653…1253"</code>) and digested with
-        <code>SHA-256</code>. Output is 32 bytes / 256 bits of wallet entropy —
-        generated entirely in your browser. Nothing is transmitted.
-      </p>
-    </section>
+    <div class="table-shell">
+      <div class="felt-mark">₿</div>
+      <div class="grid" id="grid" aria-label="One hundred dice"></div>
+      <div class="actions">
+        <button class="cta" id="rollBtn">Roll 100 Dice</button>
+        <button class="ghost" id="clearBtn">Clear</button>
+        <button class="ghost" id="soundBtn">Sound On</button>
+      </div>
+    </div>
+    <p class="hint">Click any die to set 1–6 by hand. Digital rolls use rejection-sampled CSPRNG.</p>
+
+    <div class="entropy" aria-hidden="true"><i id="bar"></i></div>
+
+    <div class="outputs" style="margin-top:22px">
+      <section class="card">
+        <h3>Concatenated rolls <button type="button" data-copy="tape">Copy</button></h3>
+        <div class="tape" id="tape">Awaiting one hundred rolls.</div>
+      </section>
+      <section class="card">
+        <h3>SHA-256 seed <button type="button" data-copy="hash">Copy</button></h3>
+        <div class="hash" id="hash">—</div>
+        <div class="meta">
+          <span id="metaAlgo">algorithm: SHA-256 via WebCrypto</span>
+          <span id="metaLen">0 bytes</span>
+        </div>
+      </section>
+      <section class="card">
+        <h3>BIP39 mnemonic (24 words) <button type="button" data-copy="mnemonic">Copy</button></h3>
+        <div class="words" id="words">Hash the dice string to derive 256 bits of entropy, then encode with BIP39.</div>
+      </section>
+    </div>
+
+    <p class="warn">
+      <strong>Educational simulation.</strong>
+      Physical casino dice, photographed or transcribed offline, are the honest source of this ritual.
+      Do not fund a wallet whose seed was born in a browser you do not fully control.
+      Verify any hash with an independent tool before it matters.
+    </p>
   </div>
 
-  <div class="toast" id="toast">Seed copied</div>
-
   <script>
-    const PIP_MAP = {
-      1: [4],
-      2: [0, 8],
-      3: [0, 4, 8],
-      4: [0, 2, 6, 8],
-      5: [0, 2, 4, 6, 8],
-      6: [0, 2, 3, 5, 6, 8]
-    };
-
+    const LOG2_6 = Math.log2(6);
     const grid = document.getElementById("grid");
-    const entropyEl = document.getElementById("entropy");
-    const bar = document.getElementById("bar");
-    const bitlab = document.getElementById("bitlab");
-    const settledEl = document.getElementById("settled");
+    const tapeEl = document.getElementById("tape");
     const hashEl = document.getElementById("hash");
-    const statusEl = document.getElementById("status");
-    const rollBtn = document.getElementById("roll");
-    const copyBtn = document.getElementById("copy");
-    const seedCard = document.getElementById("seedCard");
-    const seedTitle = document.getElementById("seedTitle");
-    const toast = document.getElementById("toast");
-
+    const wordsEl = document.getElementById("words");
+    const rollBtn = document.getElementById("rollBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const soundBtn = document.getElementById("soundBtn");
+    const bar = document.getElementById("bar");
     const dice = [];
-    let faces = Array(100).fill(0);
-    let seedHex = "";
+    let values = Array(100).fill(0);
     let busy = false;
+    let soundOn = true;
+    let audioCtx = null;
+    let wordlist = null;
+    let last = { tape: "", hash: "", mnemonic: "" };
 
-    function makeDie(i) {
-      const el = document.createElement("div");
-      el.className = "die idle";
-      el.dataset.i = i;
-      const pips = document.createElement("div");
-      pips.className = "pips";
-      for (let p = 0; p < 9; p++) {
-        const pip = document.createElement("i");
-        pip.className = "pip";
-        pips.appendChild(pip);
-      }
-      el.appendChild(pips);
-      grid.appendChild(el);
-      dice.push(el);
-    }
-
-    for (let i = 0; i < 100; i++) makeDie(i);
-
-    function paintDie(el, n) {
-      const pips = el.querySelectorAll(".pip");
-      const on = new Set(PIP_MAP[n] || []);
-      pips.forEach((p, i) => p.classList.toggle("on", on.has(i)));
-    }
-
-    function rollFairDie() {
-      const buf = new Uint8Array(1);
+    function fairDie() {
+      const buf = new Uint32Array(1);
+      const limit = Math.floor(0x100000000 / 6) * 6;
       let x;
       do {
         crypto.getRandomValues(buf);
         x = buf[0];
-      } while (x >= 252);
+      } while (x >= limit);
       return (x % 6) + 1;
     }
 
-    function renderEntropy(prefix, ghostLen) {
-      const ghost = "·".repeat(ghostLen);
-      entropyEl.innerHTML =
-        `<span class="live">${esc(prefix)}</span><span class="ghost">${ghost}</span>`;
+    function makeDie(index) {
+      const btn = document.createElement("button");
+      btn.className = "die";
+      btn.type = "button";
+      btn.dataset.v = "0";
+      btn.setAttribute("aria-label", `Die ${index + 1}`);
+      btn.innerHTML = `<div class="cube"><div class="pips">${"<i class='pip'></i>".repeat(9)}</div></div>`;
+      btn.addEventListener("click", () => {
+        if (busy) return;
+        const next = values[index] === 0 ? 1 : (values[index] % 6) + 1;
+        setDie(index, next, false);
+        void forge(false);
+      });
+      grid.appendChild(btn);
+      dice.push(btn);
     }
 
-    function esc(s) {
-      return s.replace(/[&<>]/g, c => ({ "&": "&", "<": "<", ">": ">" }[c]));
+    for (let i = 0; i < 100; i++) makeDie(i);
+
+    function setDie(i, v, animate) {
+      values[i] = v;
+      const el = dice[i];
+      el.dataset.v = String(v);
+      if (animate) {
+        el.classList.remove("settled");
+        el.classList.add("rolling");
+        el.style.setProperty("--dur", `${720 + ((i * 37) % 520)}ms`);
+      }
     }
 
-    function sleep(ms) {
-      return new Promise(r => setTimeout(r, ms));
+    function updateStats() {
+      const n = values.filter(Boolean).length;
+      document.getElementById("statDice").textContent = `${n} / 100`;
+      document.getElementById("statBits").textContent = `${(n * LOG2_6).toFixed(2)} bits`;
+      bar.style.width = `${n}%`;
+    }
+
+    function setStep(name) {
+      const order = ["roll", "concat", "hash", "seed"];
+      const idx = order.indexOf(name);
+      document.querySelectorAll(".step").forEach((el) => {
+        const i = order.indexOf(el.dataset.step);
+        el.classList.toggle("on", i === idx);
+        el.classList.toggle("done", i < idx);
+      });
+    }
+
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    }
+
+    function clack(when, gain = 0.04) {
+      if (!soundOn) return;
+      const ctx = ensureAudio();
+      const t = ctx.currentTime + when;
+      const dur = 0.07;
+      const buffer = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const env = Math.pow(1 - i / data.length, 2.4);
+        data[i] = (Math.random() * 2 - 1) * env;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 1400 + Math.random() * 900;
+      filter.Q.value = 0.8;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(gain, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      src.connect(filter).connect(g).connect(ctx.destination);
+      src.start(t);
+    }
+
+    function chime() {
+      if (!soundOn) return;
+      const ctx = ensureAudio();
+      const now = ctx.currentTime;
+      [523.25, 659.25, 783.99].forEach((freq, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "triangle";
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.03, now + 0.02 + i * 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
+        o.connect(g).connect(ctx.destination);
+        o.start(now + i * 0.05);
+        o.stop(now + 1.2);
+      });
     }
 
     async function sha256Hex(text) {
-      const data = new TextEncoder().encode(text);
-      const buf = await crypto.subtle.digest("SHA-256", data);
-      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+      const bytes = new TextEncoder().encode(text);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      const arr = new Uint8Array(digest);
+      return {
+        hex: [...arr].map((b) => b.toString(16).padStart(2, "0")).join(""),
+        bytes: arr
+      };
     }
 
-    function revealHash(hex) {
-      hashEl.innerHTML = "";
-      [...hex].forEach((ch, i) => {
+    async function loadWordlist() {
+      if (wordlist) return wordlist;
+      const url = "https://cdn.jsdelivr.net/gh/bitcoin/bips@master/bip-0039/english.txt";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("wordlist");
+      wordlist = (await res.text()).trim().split(/\r?\n/);
+      if (wordlist.length !== 2048) throw new Error("wordlist length");
+      return wordlist;
+    }
+
+    async function toMnemonic(entropy) {
+      const words = await loadWordlist();
+      const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", entropy));
+      const bits = [];
+      for (const b of entropy) {
+        for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1);
+      }
+      for (let i = 7; i >= 0; i--) bits.push((hash[0] >> i) & 1);
+      const out = [];
+      for (let w = 0; w < 24; w++) {
+        let idx = 0;
+        for (let j = 0; j < 11; j++) idx = (idx << 1) | bits[w * 11 + j];
+        out.push(words[idx]);
+      }
+      return out;
+    }
+
+    function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+    async function animateTape(text) {
+      tapeEl.textContent = "";
+      const frag = document.createDocumentFragment();
+      for (const ch of text) {
         const s = document.createElement("span");
-        s.className = "glyph";
+        s.className = "n";
         s.textContent = ch;
-        s.style.animationDelay = `${i * 18}ms`;
-        hashEl.appendChild(s);
+        frag.appendChild(s);
+      }
+      tapeEl.appendChild(frag);
+      const nodes = [...tapeEl.children];
+      for (let i = 0; i < nodes.length; i++) {
+        nodes[i].style.animationDelay = `${Math.min(i * 8, 800)}ms`;
+      }
+    }
+
+    async function scrambleHash(finalHex) {
+      hashEl.classList.add("scrambling");
+      const hex = "0123456789abcdef";
+      const start = performance.now();
+      return new Promise((resolve) => {
+        const tick = (now) => {
+          const t = Math.min(1, (now - start) / 1100);
+          let out = "";
+          for (let i = 0; i < 64; i++) {
+            out += t > i / 64 + 0.15 ? finalHex[i] : hex[(Math.random() * 16) | 0];
+          }
+          hashEl.textContent = out.match(/.{1,8}/g).join(" ");
+          if (t < 1) requestAnimationFrame(tick);
+          else {
+            hashEl.classList.remove("scrambling");
+            hashEl.textContent = finalHex.match(/.{1,8}/g).join(" ");
+            resolve();
+          }
+        };
+        requestAnimationFrame(tick);
       });
     }
 
-    async function rite() {
+    function renderWords(list) {
+      wordsEl.innerHTML = "";
+      list.forEach((w, i) => {
+        const s = document.createElement("span");
+        s.innerHTML = `<i>${String(i + 1).padStart(2, "0")}</i>${w}`;
+        wordsEl.appendChild(s);
+      });
+    }
+
+    async function forge(cinematic) {
+      updateStats();
+      if (values.some((v) => v === 0)) {
+        last = { tape: "", hash: "", mnemonic: "" };
+        if (!cinematic) {
+          tapeEl.textContent = `${values.filter(Boolean).length} of 100 faces set.`;
+          hashEl.textContent = "—";
+          wordsEl.textContent = "All one hundred dice must settle first.";
+          setStep("roll");
+        }
+        return;
+      }
+
+      const tape = values.join("");
+      last.tape = tape;
+      setStep("concat");
+      if (cinematic) await animateTape(tape);
+      else tapeEl.textContent = tape;
+
+      setStep("hash");
+      const { hex, bytes } = await sha256Hex(tape);
+      last.hash = hex;
+      if (cinematic) await scrambleHash(hex);
+      else hashEl.textContent = hex.match(/.{1,8}/g).join(" ");
+      document.getElementById("metaLen").textContent = "32 bytes · 256 bits";
+
+      setStep("seed");
+      try {
+        const mnemonic = await toMnemonic(bytes);
+        last.mnemonic = mnemonic.join(" ");
+        renderWords(mnemonic);
+      } catch {
+        wordsEl.textContent = "BIP39 wordlist unavailable. The SHA-256 digest above is still the real seed material.";
+        last.mnemonic = "";
+      }
+    }
+
+    async function rollAll() {
       if (busy) return;
       busy = true;
       rollBtn.disabled = true;
-      copyBtn.disabled = true;
-      seedCard.classList.remove("ready");
-      seedTitle.textContent = "The throw";
-      seedHex = "";
-      faces = Array(100).fill(0);
-      hashEl.innerHTML = `<span class="pending">${"0".repeat(64)}</span>`;
-      statusEl.className = "status";
-      statusEl.textContent = "Gathering unbiased faces…";
+      setStep("roll");
+      hashEl.textContent = "—";
+      wordsEl.textContent = "Listening to ivory…";
+      tapeEl.textContent = "";
+      last = { tape: "", hash: "", mnemonic: "" };
 
-      dice.forEach(d => {
-        d.className = "die idle";
+      dice.forEach((d) => {
+        d.classList.remove("settled", "rolling");
+        d.dataset.v = "0";
       });
-      renderEntropy("", 100);
-      bar.style.width = "0%";
-      bitlab.textContent = "0.00 bits";
-      settledEl.textContent = "0";
+      values = Array(100).fill(0);
+      updateStats();
 
-      const finals = Array.from({ length: 100 }, () => rollFairDie());
+      const finals = Array.from({ length: 100 }, fairDie);
+      const maxDelay = 100 * 18 + 900;
 
-      const wave = [];
       for (let i = 0; i < 100; i++) {
-        const row = Math.floor(i / 10);
-        const col = i % 10;
-        wave.push({ i, delay: row * 55 + col * 18 });
-      }
-
-      await Promise.all(wave.map(({ i, delay }) => tumbleOne(i, delay, finals[i])));
-
-      const concat = finals.join("");
-      dice.forEach(d => d.classList.add("extract"));
-      seedTitle.textContent = "Folding the river";
-      statusEl.textContent = "SHA-256 over the concatenated decimal string…";
-
-      await sleep(420);
-      const hex = await sha256Hex(concat);
-      seedHex = hex;
-      revealHash(hex);
-
-      await sleep(64 * 18 + 120);
-      seedTitle.textContent = "256-bit seed";
-      statusEl.className = "status ok";
-      statusEl.textContent = "Verified in-browser. Ready to copy.";
-      seedCard.classList.add("ready");
-      copyBtn.disabled = false;
-      rollBtn.disabled = false;
-      rollBtn.textContent = "Throw again";
-      busy = false;
-    }
-
-    function tumbleOne(i, delay, final) {
-      return new Promise(resolve => {
-        setTimeout(async () => {
-          const el = dice[i];
-          el.className = "die rolling";
-          const spins = 7 + (i % 5);
-          for (let s = 0; s < spins; s++) {
-            paintDie(el, 1 + Math.floor(Math.random() * 6));
-            await sleep(42 + s * 6);
-          }
-          faces[i] = final;
-          paintDie(el, final);
-          el.className = "die settled";
-
-          const done = faces.filter(Boolean);
-          const concat = done.join("");
-          renderEntropy(concat, 100 - done.length);
-          const bits = done.length * Math.log2(6);
-          bar.style.width = `${(done.length / 100) * 100}%`;
-          bitlab.textContent = `${bits.toFixed(2)} bits`;
-          settledEl.textContent = String(done.length);
-          resolve();
+        const delay = i * 18;
+        setTimeout(() => {
+          const flicker = setInterval(() => {
+            dice[i].dataset.v = String(1 + ((Math.random() * 6) | 0));
+          }, 42);
+          setDie(i, finals[i], true);
+          clack(0, 0.028 + Math.random() * 0.02);
+          setTimeout(() => {
+            clearInterval(flicker);
+            dice[i].dataset.v = String(finals[i]);
+            dice[i].classList.remove("rolling");
+            dice[i].classList.add("settled");
+            values[i] = finals[i];
+            updateStats();
+          }, 720 + ((i * 37) % 520));
         }, delay);
-      });
+      }
+
+      await sleep(maxDelay + 200);
+      chime();
+      await forge(true);
+      busy = false;
+      rollBtn.disabled = false;
+      rollBtn.textContent = "Roll Again";
     }
 
-    rollBtn.addEventListener("click", rite);
-    window.addEventListener("keydown", e => {
-      if (e.code === "Space" && !e.repeat) {
-        e.preventDefault();
-        rite();
-      }
+    function clearAll() {
+      if (busy) return;
+      values = Array(100).fill(0);
+      dice.forEach((d) => {
+        d.dataset.v = "0";
+        d.classList.remove("rolling", "settled");
+      });
+      tapeEl.textContent = "Awaiting one hundred rolls.";
+      hashEl.textContent = "—";
+      wordsEl.textContent = "Hash the dice string to derive 256 bits of entropy, then encode with BIP39.";
+      last = { tape: "", hash: "", mnemonic: "" };
+      document.getElementById("metaLen").textContent = "0 bytes";
+      rollBtn.textContent = "Roll 100 Dice";
+      setStep("roll");
+      updateStats();
+    }
+
+    rollBtn.addEventListener("click", rollAll);
+    clearBtn.addEventListener("click", clearAll);
+    soundBtn.addEventListener("click", () => {
+      soundOn = !soundOn;
+      soundBtn.textContent = soundOn ? "Sound On" : "Sound Off";
+      if (soundOn) ensureAudio();
     });
 
-    copyBtn.addEventListener("click", async () => {
-      if (!seedHex) return;
-      try {
-        await navigator.clipboard.writeText(seedHex);
-        toast.textContent = "Seed copied";
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 1600);
-      } catch {
-        toast.textContent = "Copy failed";
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 1600);
-      }
+    document.querySelectorAll("[data-copy]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const key = btn.dataset.copy;
+        const map = { tape: last.tape, hash: last.hash, mnemonic: last.mnemonic };
+        const value = map[key];
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          const prev = btn.textContent;
+          btn.textContent = "Copied";
+          setTimeout(() => (btn.textContent = prev), 1100);
+        } catch {}
+      });
     });
 
-    renderEntropy("", 100);
-
-    const canvas = document.getElementById("dust");
-    const ctx = canvas.getContext("2d");
-    const motes = [];
-
-    function resize() {
-      canvas.width = innerWidth * devicePixelRatio;
-      canvas.height = innerHeight * devicePixelRatio;
-      canvas.style.width = innerWidth + "px";
-      canvas.style.height = innerHeight + "px";
-      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-    }
-    resize();
-    addEventListener("resize", resize);
-
-    for (let i = 0; i < 60; i++) {
-      motes.push({
-        x: Math.random() * innerWidth,
-        y: Math.random() * innerHeight,
-        r: Math.random() * 1.4 + 0.3,
-        v: Math.random() * 0.25 + 0.05,
-        a: Math.random() * 0.35 + 0.05
-      });
-    }
-
-    function dust() {
-      ctx.clearRect(0, 0, innerWidth, innerHeight);
-      for (const m of motes) {
-        m.y -= m.v;
-        if (m.y < -4) {
-          m.y = innerHeight + 4;
-          m.x = Math.random() * innerWidth;
-        }
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(232, 201, 122, ${m.a})`;
-        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      requestAnimationFrame(dust);
-    }
-    dust();
+    updateStats();
+    loadWordlist().catch(() => {});
   </script>
 </body>
 </html>
