@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090b0e">
+<title>100 Rolls — Bitcoin Seed Ceremony</title>
+<style>
+  :root{--bg:#090b0e;--panel:#11151a;--panel2:#171c22;--ink:#f4f0e7;--muted:#8e979f;--amber:#ffb84d;--amber2:#ff7a3d;--green:#63d8a1;--line:#273039;--shadow:0 24px 70px #0009}
+  *{box-sizing:border-box}
+  html{color-scheme:dark;scroll-behavior:smooth}
+  body{margin:0;min-height:100vh;background:radial-gradient(1000px 650px at 50% -180px,#2c2519 0,#111317 45%,var(--bg) 72%);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E")}
+  .wrap{width:min(1160px,calc(100% - 32px));margin:auto;padding:42px 0 56px;position:relative}
+  header{display:flex;justify-content:space-between;align-items:flex-start;gap:28px;margin-bottom:30px}
+  .eyebrow{font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.18em;color:var(--amber);text-transform:uppercase;margin-bottom:12px}
+  h1{font-size:clamp(34px,5vw,65px);line-height:.96;letter-spacing:-.055em;margin:0;max-width:730px;font-weight:720}
+  h1 em{font-style:normal;color:#a9b0b6}
+  .intro{max-width:385px;color:var(--muted);font-size:14px;line-height:1.65;padding-top:25px}
+  .intro strong{color:var(--ink);font-weight:600}
+  .ceremony{border:1px solid var(--line);background:linear-gradient(145deg,#171b20e8,#0e1115f2);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;backdrop-filter:blur(16px)}
+  .toolbar{min-height:75px;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 19px 15px 25px;border-bottom:1px solid var(--line)}
+  .status{display:flex;align-items:center;gap:12px;min-width:0}
+  .pulse{width:9px;height:9px;border-radius:50%;background:#586169;box-shadow:0 0 0 5px #58616918;transition:.3s}
+  .status.live .pulse{background:var(--amber);box-shadow:0 0 0 5px #ffb84d18,0 0 18px #ffb84d88;animation:pulse 1s infinite}
+  .status.done .pulse{background:var(--green);box-shadow:0 0 0 5px #63d8a11c}
+  @keyframes pulse{50%{transform:scale(.7);opacity:.65}}
+  .status-copy b{display:block;font-size:13px;letter-spacing:.01em}.status-copy span{display:block;color:var(--muted);font-size:11px;margin-top:3px;font-family:ui-monospace,monospace}
+  button{appearance:none;border:0;cursor:pointer;color:#16120c;background:linear-gradient(135deg,#ffd172,var(--amber));font-weight:750;font-size:13px;padding:13px 18px;border-radius:11px;box-shadow:0 8px 30px #ff9f3030,inset 0 1px #fff8;transition:transform .18s,filter .18s,opacity .18s;white-space:nowrap}
+  button:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08)}button:active:not(:disabled){transform:translateY(0)}button:disabled{cursor:not-allowed;opacity:.52}
+  .board{padding:clamp(18px,3.5vw,40px);position:relative;background:radial-gradient(circle at 50% 15%,#1e252c 0,transparent 58%)}
+  .dice-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:clamp(5px,1vw,12px);perspective:900px}
+  .die-wrap{aspect-ratio:1;perspective:180px;position:relative}
+  .die{width:100%;height:100%;border-radius:clamp(6px,1vw,11px);position:relative;background:linear-gradient(145deg,#fffdf7,#d9d6ce);box-shadow:inset -4px -5px 8px #9b9b9644,inset 3px 3px 4px #fff,0 5px 11px #0008;transform:translateZ(0);transition:filter .2s}
+  .die:after{content:"";position:absolute;inset:3px;border-radius:inherit;border:1px solid #fff8;pointer-events:none}
+  .die.rolling{animation:tumble .48s cubic-bezier(.36,.07,.19,.97) infinite;filter:brightness(1.08)}
+  .die.settled{animation:land .4s cubic-bezier(.18,.89,.3,1.4)}
+  @keyframes tumble{0%{transform:translate3d(0,0,0) rotate(0)}25%{transform:translate3d(3px,-9px,12px) rotate(80deg) rotateX(45deg)}50%{transform:translate3d(-3px,-3px,5px) rotate(170deg) rotateY(55deg)}75%{transform:translate3d(2px,-7px,10px) rotate(255deg) rotateX(-35deg)}100%{transform:translate3d(0,0,0) rotate(360deg)}}
+  @keyframes land{0%{transform:scale(.88) rotate(-7deg)}65%{transform:scale(1.1) rotate(2deg)}100%{transform:scale(1)}}
+  .pip{position:absolute;width:17%;aspect-ratio:1;background:#17191c;border-radius:50%;transform:translate(-50%,-50%);box-shadow:inset 1px 1px 2px #0009,0 1px #fff8}
+  .tl{left:25%;top:25%}.tr{left:75%;top:25%}.ml{left:25%;top:50%}.mc{left:50%;top:50%}.mr{left:75%;top:50%}.bl{left:25%;top:75%}.br{left:75%;top:75%}
+  .index{position:absolute;right:1px;bottom:-15px;color:#69727a;font:8px/1 ui-monospace,monospace;opacity:0;transition:opacity .2s}.board:hover .index{opacity:.8}
+  .process{display:grid;grid-template-columns:1.35fr .65fr;border-top:1px solid var(--line)}
+  .readout{padding:24px 26px;border-right:1px solid var(--line);min-width:0}
+  .label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;gap:12px}
+  .label{font:700 10px/1 ui-monospace,SFMono-Regular,monospace;text-transform:uppercase;letter-spacing:.15em;color:#9ba4ab}
+  .count{color:var(--amber);font:11px ui-monospace,monospace}
+  .digits{height:58px;overflow:auto;word-break:break-all;color:#d4d8da;background:#0a0d10;border:1px solid #222930;border-radius:10px;padding:11px 13px;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.13em;scrollbar-width:thin}
+  .digits .pending{color:#3c454d;letter-spacing:.18em}.digits .fresh{color:var(--amber);animation:flash .5s}
+  @keyframes flash{from{background:#ffb84d;color:#111}to{background:transparent;color:var(--amber)}}
+  .entropy{padding:24px 26px;display:flex;flex-direction:column;justify-content:center}
+  .entropy-number{font-size:27px;font-weight:650;letter-spacing:-.035em;margin:8px 0 9px}.entropy-number small{font-size:12px;color:var(--muted);letter-spacing:0;font-weight:500}
+  .bar{height:5px;background:#293038;border-radius:8px;overflow:hidden}.bar i{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--amber2),var(--amber));border-radius:inherit;box-shadow:0 0 13px #ff9f50;transition:width .16s}
+  .result{border-top:1px solid var(--line);padding:24px 26px;background:#0c0f12;display:grid;grid-template-columns:1fr auto;align-items:end;gap:16px}
+  .hash{margin-top:11px;color:#616b73;word-break:break-all;font:clamp(13px,2vw,19px)/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.055em;transition:color .5s;text-shadow:0 0 18px transparent}
+  .hash.ready{color:var(--green);text-shadow:0 0 23px #63d8a124}
+  .copy{background:#171d22;color:#d8dcdf;border:1px solid #303840;box-shadow:none;padding:10px 14px}.copy:disabled{opacity:.35}
+  .foot{display:flex;justify-content:space-between;gap:25px;margin-top:18px;color:#727b83;font-size:11px;line-height:1.55}.foot span:last-child{text-align:right}.secure{color:#87918f}.secure:before{content:"◆";font-size:7px;color:var(--green);vertical-align:2px;margin-right:7px}
+  @media(max-width:720px){.wrap{width:min(100% - 20px,580px);padding-top:25px}header{display:block}.intro{padding-top:18px}.dice-grid{gap:5px}.board{padding:20px 12px 28px}.process{grid-template-columns:1fr}.readout{border-right:0;border-bottom:1px solid var(--line)}.result{grid-template-columns:1fr}.copy{justify-self:start}.foot{display:block}.foot span{display:block;margin-top:7px}.foot span:last-child{text-align:left}.toolbar{padding-left:16px}.die{border-radius:6px}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.die.rolling{animation:none}.die.settled{animation:none}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div><div class="eyebrow">Verifiable entropy ceremony</div><h1>One hundred rolls.<br><em>One private seed.</em></h1></div>
+    <div class="intro">Each die is sampled with your browser’s <strong>cryptographically secure random generator</strong>. 100 six-sided rolls carry 258.5 bits of entropy—then SHA-256 seals them into a 256-bit value.</div>
+  </header>
+
+  <section class="ceremony" aria-label="100 dice seed generator">
+    <div class="toolbar">
+      <div class="status" id="status"><i class="pulse"></i><div class="status-copy"><b id="statusTitle">Ready for the ceremony</b><span id="statusSub">No randomness generated yet</span></div></div>
+      <button id="rollBtn">Roll 100 dice</button>
+    </div>
+    <div class="board"><div class="dice-grid" id="diceGrid"></div></div>
+    <div class="process">
+      <div class="readout">
+        <div class="label-row"><span class="label">Roll transcript · ordered left to right</span><span class="count" id="rollCount">0 / 100</span></div>
+        <div class="digits" id="digits" aria-live="polite"><span class="pending">Waiting for rolls…</span></div>
+      </div>
+      <div class="entropy">
+        <span class="label">Raw entropy</span><div class="entropy-number"><span id="bits">0.00</span> <small>/ 258.50 bits</small></div>
+        <div class="bar"><i id="bar"></i></div>
+      </div>
+    </div>
+    <div class="result">
+      <div><span class="label">SHA-256 seed · 32 bytes</span><div class="hash" id="hash">— — — — — — — —</div></div>
+      <button class="copy" id="copyBtn" disabled>Copy seed</button>
+    </div>
+  </section>
+  <div class="foot"><span class="secure">Generated locally in this tab. Nothing is transmitted or stored.</span><span>SHA-256(UTF-8 transcript) · Use only on a trusted, offline device for real funds.</span></div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const grid=$('#diceGrid'), digits=$('#digits'), bits=$('#bits'), bar=$('#bar'), count=$('#rollCount');
+  const status=$('#status'), statusTitle=$('#statusTitle'), statusSub=$('#statusSub'), rollBtn=$('#rollBtn'), hashEl=$('#hash'), copyBtn=$('#copyBtn');
+  const patterns={1:['mc'],2:['tl','br'],3:['tl','mc','br'],4:['tl','tr','bl','br'],5:['tl','tr','mc','bl','br'],6:['tl','tr','ml','mr','bl','br']};
+  const dice=[];
+  function face(el,n){el.innerHTML=patterns[n].map(p=>`<i class="pip ${p}"></i>`).join(''); el.dataset.value=n;}
+  for(let i=0;i<100;i++){
+    const w=document.createElement('div'); w.className='die-wrap';
+    const d=document.createElement('div'); d.className='die'; d.setAttribute('aria-label',`Die ${i+1}`); face(d,((i*5+2)%6)+1);
+    const idx=document.createElement('span');idx.className='index';idx.textContent=String(i+1).padStart(2,'0');w.append(d,idx);grid.append(w);dice.push(d);
+  }
+  // Rejection sampling removes the tiny modulo bias from mapping bytes to six faces.
+  function secureRolls(total){
+    const out=[];
+    while(out.length<total){
+      const a=new Uint8Array(total-out.length+16);crypto.getRandomValues(a);
+      for(const b of a){if(b<252)out.push((b%6)+1);if(out.length===total)break;}
+    }
+    return out;
+  }
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  async function sha256(text){
+    const data=new TextEncoder().encode(text);const buf=await crypto.subtle.digest('SHA-256',data);
+    return [...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  }
+  let running=false,currentHash='';
+  async function ceremony(){
+    if(running)return;running=true;rollBtn.disabled=true;copyBtn.disabled=true;currentHash='';
+    status.className='status live';statusTitle.textContent='Dice are in motion';statusSub.textContent='Sampling window.crypto securely';
+    digits.innerHTML='';bits.textContent='0.00';bar.style.width='0';count.textContent='0 / 100';hashEl.className='hash';hashEl.textContent='computing after final roll…';
+    const outcomes=secureRolls(100), transcript=[];
+    dice.forEach((d,i)=>{d.className='die rolling';d.style.animationDelay=`-${(i%9)*43}ms`;});
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!reduced)await sleep(620);
+    for(let i=0;i<100;i++){
+      const d=dice[i];face(d,outcomes[i]);d.className='die settled';d.style.animationDelay='0ms';transcript.push(outcomes[i]);
+      const s=document.createElement('span');s.className='fresh';s.textContent=outcomes[i];digits.append(s);digits.scrollTop=digits.scrollHeight;
+      count.textContent=`${i+1} / 100`;bits.textContent=((i+1)*Math.log2(6)).toFixed(2);bar.style.width=`${i+1}%`;
+      if(!reduced && (i+1)%5===0)await sleep(90);
+    }
+    statusTitle.textContent='Hashing the transcript';statusSub.textContent='SHA-256 via Web Crypto';
+    const text=transcript.join('');currentHash=await sha256(text);await sleep(reduced?0:280);
+    hashEl.textContent=currentHash;hashEl.className='hash ready';status.className='status done';statusTitle.textContent='Seed complete';statusSub.textContent='100 rolls · 258.50 raw bits · 256-bit digest';
+    rollBtn.textContent='Roll a new seed';rollBtn.disabled=false;copyBtn.disabled=false;running=false;
+  }
+  rollBtn.addEventListener('click',ceremony);
+  copyBtn.addEventListener('click',async()=>{if(!currentHash)return;await navigator.clipboard.writeText(currentHash);copyBtn.textContent='Copied';setTimeout(()=>copyBtn.textContent='Copy seed',1500);});
+})();
+</script>
+</body>
+</html>
