@@ -1,306 +1,758 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bitcoin Seed · 100 Dice Entropy</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bitcoin Seed Generator — 100 Dice Entropy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg0:#0c0e16;
-    --bg1:#171a2b;
-    --card:rgba(255,255,255,0.045);
-    --border:rgba(255,255,255,0.09);
-    --ink:#eef0f7;
-    --muted:#9aa0b4;
+    --bg:#070b16;
+    --bg2:#0d1326;
+    --panel:rgba(255,255,255,0.035);
+    --panel-strong:rgba(255,255,255,0.06);
+    --border:rgba(255,255,255,0.08);
+    --border-strong:rgba(255,255,255,0.14);
+    --text:#eef2fb;
+    --muted:#8a93ab;
+    --dim:#59627a;
     --accent:#f7931a;
-    --accent2:#ffc266;
-    --face:#f6f1e3;
-    --pip:#222;
-    --die:clamp(30px,7.6vw,46px);
-    --gap:6px;
+    --accent2:#ffc14d;
+    --accent-deep:#c06a00;
+    --good:#3ddc97;
+    --shadow:0 20px 60px -20px rgba(0,0,0,0.7);
   }
+
   *{box-sizing:border-box}
-  html,body{margin:0}
+  html,body{margin:0;padding:0}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:var(--ink);
-    background:
-      radial-gradient(1100px 560px at 50% -12%, rgba(247,147,26,0.12), transparent 60%),
-      linear-gradient(160deg,var(--bg0),var(--bg1));
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
     min-height:100vh;
-    padding:clamp(18px,4vw,40px) 16px 56px;
+    overflow-x:hidden;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:560px;margin:0 auto}
 
-  header{text-align:center;margin-bottom:20px}
-  h1{margin:0;font-size:clamp(1.3rem,4.6vw,1.85rem);font-weight:700;letter-spacing:-0.01em}
-  .sub{margin:9px auto 0;max-width:30rem;color:var(--muted);font-size:.9rem;line-height:1.55}
-  .sub b{color:var(--accent2)}
-
-  .stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0 20px}
-  .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:.76rem;color:var(--muted)}
-  .stat b{color:var(--ink);font-variant-numeric:tabular-nums}
-
-  .grid{
-    display:grid;
-    grid-template-columns:repeat(10,1fr);
-    gap:var(--gap);
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:14px;
-    box-shadow:0 24px 60px rgba(0,0,0,.45);
+  /* ---------- animated background ---------- */
+  .bg-layer{
+    position:fixed;inset:0;z-index:-2;overflow:hidden;
+    background:
+      radial-gradient(1200px 800px at 80% -10%, rgba(247,147,26,0.10), transparent 60%),
+      radial-gradient(1000px 700px at -10% 110%, rgba(60,90,220,0.10), transparent 60%),
+      linear-gradient(180deg,#070b16 0%, #0a0f1f 50%, #070b16 100%);
   }
-  .die{
-    width:100%;
-    aspect-ratio:1/1;
-    background:var(--face);
-    border-radius:18%;
-    display:grid;
-    grid-template:repeat(3,1fr)/repeat(3,1fr);
-    padding:11%;
-    gap:2px;
-    box-shadow:0 3px 6px rgba(0,0,0,.4), inset 0 0 0 1px rgba(0,0,0,.06);
-    transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  .orb{
+    position:fixed;border-radius:50%;filter:blur(70px);opacity:0.5;z-index:-1;
+    pointer-events:none;mix-blend-mode:screen;
+    animation:drift 22s ease-in-out infinite alternate;
   }
-  .die.rolling{animation:tumble .8s ease-in-out;will-change:transform}
-  @keyframes tumble{
-    0%{transform:rotateX(0)rotateY(0)rotateZ(0)}
-    50%{transform:rotateX(360deg)rotateY(180deg)rotateZ(90deg)scale(1.08)}
-    100%{transform:rotateX(720deg)rotateY(360deg)rotateZ(180deg)}
+  .orb.a{width:480px;height:480px;background:radial-gradient(circle,rgba(247,147,26,0.55),transparent 70%);top:-120px;right:-80px;animation-delay:0s}
+  .orb.b{width:520px;height:520px;background:radial-gradient(circle,rgba(255,193,77,0.35),transparent 70%);bottom:-160px;left:-120px;animation-delay:-8s}
+  .orb.c{width:360px;height:360px;background:radial-gradient(circle,rgba(80,120,255,0.3),transparent 70%);top:40%;left:50%;animation-delay:-14s}
+  @keyframes drift{
+    0%{transform:translate(0,0) scale(1)}
+    100%{transform:translate(40px,30px) scale(1.12)}
   }
-  .pip{width:18%;height:18%;border-radius:50%;background:var(--pip);align-self:center;justify-self:center;opacity:0}
-  .f1 .pip:nth-child(5){opacity:1}
-  .f2 .pip:nth-child(1),.f2 .pip:nth-child(9){opacity:1}
-  .f3 .pip:nth-child(1),.f3 .pip:nth-child(5),.f3 .pip:nth-child(9){opacity:1}
-  .f4 .pip:nth-child(1),.f4 .pip:nth-child(3),.f4 .pip:nth-child(7),.f4 .pip:nth-child(9){opacity:1}
-  .f5 .pip:nth-child(1),.f5 .pip:nth-child(3),.f5 .pip:nth-child(5),.f5 .pip:nth-child(7),.f5 .pip:nth-child(9){opacity:1}
-  .f6 .pip:nth-child(1),.f6 .pip:nth-child(3),.f6 .pip:nth-child(4),.f6 .pip:nth-child(6),.f6 .pip:nth-child(7),.f6 .pip:nth-child(9){opacity:1}
 
-  .entropy{margin:18px 0 4px}
-  .entropy .bar{height:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;overflow:hidden}
-  .entropy .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 0 12px rgba(247,147,26,.5);transition:width .2s ease}
-  .entropy .lbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:7px;font-variant-numeric:tabular-nums}
+  /* faint grid texture */
+  .grid-tex{
+    position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.4;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);
+    background-size:46px 46px;
+    mask-image:radial-gradient(circle at 50% 30%,black,transparent 75%);
+  }
 
-  .controls{display:flex;justify-content:center;margin:18px 0 6px}
-  button{
-    font:inherit;font-weight:700;font-size:1rem;
-    color:#1a1206;
+  /* ---------- layout ---------- */
+  .wrap{
+    max-width:1080px;margin:0 auto;padding:42px 22px 80px;
+  }
+  header.hero{text-align:center;margin-bottom:34px}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;
+    text-transform:uppercase;color:var(--accent2);
+    background:rgba(247,147,26,0.08);border:1px solid rgba(247,147,26,0.25);
+    padding:6px 14px;border-radius:999px;margin-bottom:18px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:0.35}}
+  h1{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;
+    font-size:clamp(30px,5vw,52px);line-height:1.05;margin:0 0 12px;
+    letter-spacing:-0.02em;
+    background:linear-gradient(180deg,#fff 0%, #c8d0e6 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  h1 .hl{
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{color:var(--muted);max-width:620px;margin:0 auto;font-size:15px}
+  .sub b{color:#cfd6e8;font-weight:600}
+
+  /* ---------- stepper ---------- */
+  .stepper{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    margin:26px auto 30px;flex-wrap:wrap;
+  }
+  .step{
+    display:flex;align-items:center;gap:9px;
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:0.04em;
+    color:var(--dim);padding:8px 14px;border-radius:999px;
+    border:1px solid var(--border);background:var(--panel);
+    transition:all .35s ease;
+  }
+  .step .num{
+    width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+    font-size:10px;background:rgba(255,255,255,0.06);color:var(--muted);font-weight:700;
+    transition:all .35s ease;
+  }
+  .step.active{color:var(--accent2);border-color:rgba(247,147,26,0.5);background:rgba(247,147,26,0.08)}
+  .step.active .num{background:var(--accent);color:#1a0f00;box-shadow:0 0 14px rgba(247,147,26,0.7)}
+  .step.done{color:var(--good);border-color:rgba(61,220,151,0.35)}
+  .step.done .num{background:var(--good);color:#002418}
+  .sep{width:22px;height:1px;background:var(--border)}
+
+  /* ---------- panels ---------- */
+  .panel{
+    background:linear-gradient(180deg,var(--panel-strong),var(--panel));
+    border:1px solid var(--border);border-radius:22px;
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  }
+
+  /* ---------- dice arena ---------- */
+  .arena-wrap{padding:26px 22px 22px;margin-bottom:22px;position:relative;overflow:hidden}
+  .arena-wrap::before{
+    content:"";position:absolute;inset:0;border-radius:22px;pointer-events:none;
+    background:radial-gradient(120% 80% at 50% 120%, rgba(247,147,26,0.14), transparent 60%);
+  }
+  .arena{
+    --sz:clamp(30px,4.6vw,48px);
+    --d:calc(var(--sz)/2);
+    display:grid;grid-template-columns:repeat(10,var(--sz));grid-auto-rows:var(--sz);
+    gap:clamp(6px,1vw,10px);justify-content:center;
+    perspective:900px;margin:0 auto;width:fit-content;position:relative;z-index:1;
+  }
+  .cell{
+    width:var(--sz);height:var(--sz);position:relative;
+    perspective:340px;
+  }
+  .cell::after{ /* settle ring */
+    content:"";position:absolute;inset:-3px;border-radius:10px;
+    border:1px solid transparent;transition:all .4s ease;pointer-events:none;
+  }
+  .cell.lit::after{
+    border-color:rgba(247,147,26,0.55);
+    box-shadow:0 0 14px rgba(247,147,26,0.35), inset 0 0 8px rgba(247,147,26,0.18);
+  }
+
+  .cube{
+    position:absolute;inset:0;transform-style:preserve-3d;
+    transform:rotateX(0deg) rotateY(0deg);
+    will-change:transform;
+    filter:drop-shadow(0 4px 6px rgba(0,0,0,0.45));
+  }
+  .face{
+    position:absolute;inset:0;border-radius:14%;
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+    padding:13%;
+    background:
+      radial-gradient(120% 120% at 30% 25%, #ffffff 0%, #f3f1ea 55%, #d9d4c7 100%);
+    border:1px solid rgba(0,0,0,0.18);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.12);
+    backface-visibility:hidden;
+  }
+  .pip{
+    width:100%;height:100%;border-radius:50%;align-self:center;justify-self:center;
+    max-width:30%;max-height:30%;
+    background:radial-gradient(circle at 35% 30%, #434343, #111 70%);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,0.25), 0 1px 1px rgba(0,0,0,0.3);
+  }
+
+  /* controls */
+  .controls{
+    display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;
+    margin-top:22px;position:relative;z-index:1;
+  }
+  .btn{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;
+    letter-spacing:0.02em;color:#1a0f00;
     background:linear-gradient(180deg,var(--accent2),var(--accent));
-    border:none;border-radius:12px;
-    padding:.82rem 1.9rem;cursor:pointer;
-    box-shadow:0 8px 22px rgba(247,147,26,.38), inset 0 1px 0 rgba(255,255,255,.45);
-    transition:transform .1s,filter .2s;
+    border:none;border-radius:999px;padding:14px 30px;cursor:pointer;
+    box-shadow:0 10px 30px -8px rgba(247,147,26,0.7), inset 0 1px 0 rgba(255,255,255,0.5);
+    transition:transform .15s ease, box-shadow .25s ease, filter .2s ease;
+    display:inline-flex;align-items:center;gap:10px;
   }
-  button:hover{filter:brightness(1.05)}
-  button:active{transform:translateY(1px)}
-  button:disabled{opacity:.55;cursor:wait}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 16px 38px -8px rgba(247,147,26,0.85), inset 0 1px 0 rgba(255,255,255,0.5)}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{filter:saturate(0.4) brightness(0.7);cursor:not-allowed;transform:none;box-shadow:none}
+  .btn .icn{font-size:18px;line-height:1}
+  .btn.ghost{
+    background:transparent;color:var(--muted);border:1px solid var(--border-strong);
+    box-shadow:none;
+  }
+  .btn.ghost:hover{color:var(--text);border-color:var(--accent2);box-shadow:none;background:var(--panel)}
 
-  .out{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:18px}
-  .out h2{margin:0 0 8px;font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .concat{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92rem;line-height:1.6;word-break:break-all;color:var(--ink);min-height:1.6em}
-  .concat span{transition:color .5s ease}
-  .concat span.new{color:var(--accent2)}
-  .seed-row{display:flex;align-items:flex-start;gap:10px;margin-top:6px}
-  .seed{flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.95rem;line-height:1.5;word-break:break-all;color:var(--accent2);text-shadow:0 0 18px rgba(247,147,26,.45);min-height:1.2em}
-  .copy{flex:none;font-size:.76rem;font-weight:600;color:var(--ink);background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:8px;padding:7px 11px;cursor:pointer;align-self:center}
-  .copy:hover{background:rgba(255,255,255,.13)}
-  .foot{margin:18px auto 0;max-width:32rem;text-align:center;font-size:.72rem;color:var(--muted);line-height:1.7}
-  .foot code{background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  .foot b{color:var(--accent2)}
+  .progress{
+    display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);
+  }
+  .pbar{width:160px;height:6px;border-radius:3px;background:rgba(255,255,255,0.07);overflow:hidden}
+  .pfill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s ease;border-radius:3px}
+  .pcount{min-width:74px}
+  .pcount b{color:var(--accent2);font-weight:700}
+
+  /* ---------- results grid ---------- */
+  .results{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media (max-width:760px){.results{grid-template-columns:1fr}}
+
+  .card{padding:22px}
+  .card h3{
+    font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
+    letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .card .hint{font-size:12px;color:var(--dim);margin:0 0 16px;font-family:'JetBrains Mono',monospace}
+
+  /* dice string matrix */
+  .strmatrix{
+    display:grid;grid-template-columns:repeat(10,1fr);gap:6px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(13px,2vw,17px);
+  }
+  .scell{
+    aspect-ratio:1;display:grid;place-items:center;border-radius:7px;
+    background:rgba(255,255,255,0.025);border:1px solid var(--border);
+    color:var(--dim);transition:all .3s ease;
+  }
+  .scell.on{
+    color:var(--accent2);background:rgba(247,147,26,0.1);border-color:rgba(247,147,26,0.3);
+    animation:pop .35s ease;
+  }
+  @keyframes pop{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+
+  .rawstr{
+    margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--dim);
+    word-break:break-all;line-height:1.7;
+  }
+  .rawstr b{color:#cfd6e8;font-weight:500}
+
+  /* seed card */
+  .seed-block{
+    position:relative;border-radius:14px;padding:18px 16px;
+    background:linear-gradient(180deg,rgba(247,147,26,0.07),rgba(247,147,26,0.02));
+    border:1px solid rgba(247,147,26,0.22);
+    min-height:96px;display:flex;flex-direction:column;justify-content:center;
+  }
+  .seed-label{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;
+    text-transform:uppercase;color:var(--accent2);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .seed-hex{
+    font-family:'JetBrains Mono',monospace;font-size:clamp(13px,1.7vw,16px);font-weight:700;
+    letter-spacing:0.02em;line-height:1.7;color:#fff;word-break:break-all;
+    text-shadow:0 0 18px rgba(247,147,26,0.35);
+  }
+  .seed-hex .grp{color:var(--accent2)}
+  .seed-hex .flip{display:inline-block;min-width:0.6em}
+
+  .seed-pending{
+    font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:13px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .spinner{width:16px;height:16px;border:2px solid rgba(247,147,26,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .copy-btn{
+    background:rgba(255,255,255,0.05);border:1px solid var(--border-strong);color:var(--muted);
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+    padding:4px 10px;border-radius:999px;cursor:pointer;transition:all .2s ease;
+  }
+  .copy-btn:hover{color:var(--accent2);border-color:var(--accent2)}
+  .copy-btn.ok{color:var(--good);border-color:var(--good)}
+
+  .stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px}
+  .stat{flex:1;min-width:90px}
+  .stat .k{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim)}
+  .stat .v{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;color:#cfd6e8;margin-top:2px}
+  .stat .v small{font-size:11px;color:var(--muted);font-weight:500}
+
+  .footer-note{
+    text-align:center;margin-top:34px;font-size:12px;color:var(--dim);
+    font-family:'JetBrains Mono',monospace;letter-spacing:0.03em;
+  }
+  .footer-note b{color:var(--muted)}
+  .kbd{
+    font-family:'JetBrains Mono',monospace;font-size:10px;
+    background:rgba(255,255,255,0.06);border:1px solid var(--border);border-bottom-width:2px;
+    padding:1px 6px;border-radius:5px;color:var(--muted);
+  }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>🎲 Bitcoin Seed from 100 Dice</h1>
-      <p class="sub">Roll 100 six-sided dice, concatenate the results into a string, and hash it with <b>SHA-256</b> to derive a wallet seed &mdash; just like the manual entropy ceremony.</p>
-    </header>
+<div class="bg-layer"></div>
+<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+<div class="grid-tex"></div>
 
-    <div class="stats">
-      <div class="stat">Dice: <b>100</b></div>
-      <div class="stat">Outcomes: <b>6¹⁰⁰</b></div>
-      <div class="stat">Entropy: <b id="entBits">0.00</b> bits</div>
-      <div class="stat">Target: <b>256-bit</b></div>
-    </div>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span> SHA-256 · WebCrypto · True CSPRNG</div>
+    <h1>Generate a Bitcoin Seed from <span class="hl">100 Dice Rolls</span></h1>
+    <p class="sub">Roll 100 six-sided dice, concatenate the raw outcomes into a single string, and hash it with <b>SHA-256</b>. The resulting digest is a <b>256-bit entropy source</b> — the kind you could feed into a BIP39 mnemonic generator. Every roll below uses your browser's cryptographic RNG.</p>
+  </header>
 
-    <div class="grid" id="grid"></div>
-
-    <div class="entropy">
-      <div class="bar"><div class="fill" id="entFill"></div></div>
-      <div class="lbl"><span>0 bits</span><span>258.50 bits</span></div>
-    </div>
-
-    <div class="controls">
-      <button id="roll" type="button">Roll 100 Dice</button>
-    </div>
-
-    <div class="out">
-      <h2>Concatenated Dice Rolls</h2>
-      <div class="concat" id="concat"></div>
-      <h2 style="margin-top:16px">SHA-256 &rarr; Seed</h2>
-      <div class="seed-row">
-        <div class="seed" id="seed"></div>
-        <button class="copy" id="copy" type="button">Copy</button>
-      </div>
-    </div>
-
-    <p class="foot">
-      Dice values use <code>crypto.getRandomValues</code> for true randomness &middot;
-      seed = <code>SHA256(diceString)</code> via the Web Crypto API &middot;
-      100 dice &asymp; <b>258.50</b> bits of entropy (exceeds 256-bit security).
-    </p>
+  <div class="stepper" id="stepper">
+    <div class="step" data-step="roll"><span class="num">1</span> Roll 100 dice</div>
+    <div class="sep"></div>
+    <div class="step" data-step="concat"><span class="num">2</span> Concatenate</div>
+    <div class="sep"></div>
+    <div class="step" data-step="hash"><span class="num">3</span> SHA-256</div>
+    <div class="sep"></div>
+    <div class="step" data-step="seed"><span class="num">4</span> Seed</div>
   </div>
 
+  <div class="panel arena-wrap">
+    <div class="arena" id="arena"></div>
+    <div class="controls">
+      <button class="btn" id="rollBtn"><span class="icn">🎲</span> Roll the dice</button>
+      <div class="progress">
+        <div class="pbar"><div class="pfill" id="pfill"></div></div>
+        <div class="pcount"><b id="pcount">0</b> / 100 settled</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="panel card">
+      <h3>① Dice outcomes</h3>
+      <p class="hint">// 100 digits concatenated in roll order</p>
+      <div class="strmatrix" id="strmatrix"></div>
+      <div class="rawstr" id="rawstr"></div>
+    </div>
+
+    <div class="panel card">
+      <h3>② SHA-256 → Seed</h3>
+      <p class="hint">// crypto.subtle.digest("SHA-256", utf8)</p>
+      <div class="seed-block" id="seedBlock">
+        <div class="seed-pending" id="seedPending">Press <b>“Roll the dice”</b> to begin…</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Entropy</div><div class="v">≈ 258.5<small> bits</small></div></div>
+        <div class="stat"><div class="k">Digest</div><div class="v">256<small> bits</small></div></div>
+        <div class="stat"><div class="k">Hex length</div><div class="v">64<small> chars</small></div></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    Randomness: <b>crypto.getRandomValues</b> · Hashing: <b>crypto.subtle.digest</b> · Press <span class="kbd">Space</span> to roll
+  </p>
+</div>
+
 <script>
-(function(){
+(() => {
   "use strict";
+
+  /* ============================================================
+     Die geometry: 6 faces placed on a cube. Each face's placement
+     transform = R · translateZ(d). To show face v to the viewer we
+     rotate the cube by R⁻¹ (the inverse). At the settled orientation
+     only a single axis is non-zero, so pips render upright.
+     ============================================================ */
+  const FACE_PLACE = {
+    1: "rotateY(0deg) translateZ(var(--d))",
+    2: "rotateX(90deg) translateZ(var(--d))",
+    3: "rotateY(90deg) translateZ(var(--d))",
+    4: "rotateY(-90deg) translateZ(var(--d))",
+    5: "rotateX(-90deg) translateZ(var(--d))",
+    6: "rotateY(180deg) translateZ(var(--d))",
+  };
+  // base rotation (deg) to bring face v to the front
+  const SHOW = {
+    1: {x:0,   y:0},
+    2: {x:-90, y:0},
+    3: {x:0,   y:-90},
+    4: {x:0,   y:90},
+    5: {x:90,  y:0},
+    6: {x:0,   y:180},
+  };
+  // pip grid positions (row/col in 3x3) per face value
+  const PIPS = {
+    1: ["2/2"],
+    2: ["1/1","3/3"],
+    3: ["1/1","2/2","3/3"],
+    4: ["1/1","1/3","3/1","3/3"],
+    5: ["1/1","1/3","2/2","3/1","3/3"],
+    6: ["1/1","2/1","3/1","1/3","2/3","3/3"],
+  };
+
   const N = 100;
-  const LOG2_6 = Math.log2(6);            // 2.5849625...
-  const MAX_BITS = N * LOG2_6;           // 258.49625...
+  const COLS = 10;
 
-  const grid    = document.getElementById('grid');
-  const rollBtn = document.getElementById('roll');
-  const concatEl = document.getElementById('concat');
-  const seedEl  = document.getElementById('seed');
-  const entFill = document.getElementById('entFill');
-  const entBits = document.getElementById('entBits');
-  const copyBtn = document.getElementById('copy');
+  const arena = document.getElementById("arena");
+  const strmatrix = document.getElementById("strmatrix");
+  const rawstr = document.getElementById("rawstr");
+  const rollBtn = document.getElementById("rollBtn");
+  const pfill = document.getElementById("pfill");
+  const pcount = document.getElementById("pcount");
+  const seedBlock = document.getElementById("seedBlock");
+  const stepper = document.getElementById("stepper");
 
-  // ---- build the 10x10 grid of dice -------------------------------------
+  /* ---------- build dice + string matrix ---------- */
   const dice = [];
-  for (let i = 0; i < N; i++) {
-    const d = document.createElement('div');
-    d.className = 'die f' + randFace();
-    for (let p = 0; p < 9; p++) {
-      const s = document.createElement('span');
-      s.className = 'pip';
-      d.appendChild(s);
-    }
-    grid.appendChild(d);
-    dice.push(d);
+  const scells = [];
+
+  function faceHTML(v){
+    const pips = PIPS[v].map(p =>
+      `<span class="pip" style="grid-area:${p}"></span>`).join("");
+    return `<div class="face" style="transform:${FACE_PLACE[v]}">${pips}</div>`;
+  }
+  function buildDie(){
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    const cube = document.createElement("div");
+    cube.className = "cube";
+    let faces = "";
+    for (let v=1; v<=6; v++) faces += faceHTML(v);
+    cube.innerHTML = faces;
+    cell.appendChild(cube);
+    return {cell, cube};
+  }
+  for (let i=0;i<N;i++){
+    const {cell, cube} = buildDie();
+    arena.appendChild(cell);
+    dice.push({i, cell, cube, rx:0, ry:0, rz:0,
+               vrx:0, vry:0, vrz:0,
+               state:"idle", value:0,
+               settle:null, settleAt:0});
+  }
+  for (let i=0;i<N;i++){
+    const s = document.createElement("div");
+    s.className = "scell";
+    s.textContent = "·";
+    strmatrix.appendChild(s);
+    scells.push(s);
   }
 
-  // ---- randomness --------------------------------------------------------
-  function randFace(){ return Math.floor(Math.random() * 6) + 1; }       // visual flicker
+  /* ---------- math helpers ---------- */
+  const rand = (a,b) => a + Math.random()*(b-a);
+  const easeOutCubic = t => 1 - Math.pow(1-t, 3);
+  const lerp = (a,b,t) => a + (b-a)*t;
 
-  function cryptoFaces(n){                                               // true-random finals
-    const a = new Uint32Array(n);
-    crypto.getRandomValues(a);
-    const out = new Array(n);
-    for (let i = 0; i < n; i++) out[i] = (a[i] % 6) + 1;                 // bias ~ 1 in 1e9, negligible
+  /* cryptographically-secure random ints 1..6 */
+  function rollValues(){
+    const buf = new Uint32Array(N);
+    crypto.getRandomValues(buf);
+    const out = new Array(N);
+    for (let i=0;i<N;i++) out[i] = (buf[i] % 6) + 1; // modulo bias negligible at 2^32
     return out;
   }
 
-  function setFace(i, v){
-    const d = dice[i];
-    d.classList.remove('f1','f2','f3','f4','f5','f6');
-    d.classList.add('f' + v);
+  /* ---------- animation loop ---------- */
+  let raf = null;
+  let lastTime = 0;
+
+  function applyTransform(d){
+    d.cube.style.transform =
+      `rotateX(${d.rx.toFixed(2)}deg) rotateY(${d.ry.toFixed(2)}deg) rotateZ(${d.rz.toFixed(2)}deg)`;
   }
 
-  // ---- SHA-256 of the concatenated dice string ---------------------------
-  async function sha256Hex(str){
-    const data = new TextEncoder().encode(str);
-    const buf  = await crypto.subtle.digest('SHA-256', data);
-    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  function startSettle(d, now){
+    d.state = "settling";
+    const v = d.pendingValue;
+    const base = SHOW[v];
+    // target = base + enough full spins to be comfortably ahead of current rotation
+    const spinX = 360 * (1 + ((Math.random()*2)|0));
+    const spinY = 360 * (1 + ((Math.random()*2)|0));
+    let toX = base.x;
+    while (toX < d.rx + spinX) toX += 360;
+    let toY = base.y;
+    while (toY < d.ry + spinY) toY += 360;
+    const toZ = Math.round(d.rz/360)*360; // upright
+    d.settle = {
+      fromX:d.rx, fromY:d.ry, fromZ:d.rz,
+      toX, toY, toZ,
+      start:now, dur: rand(520, 720)
+    };
   }
 
-  function typeWrite(el, text, delay){
-    return new Promise(res => {
-      el.textContent = '';
-      let i = 0;
-      (function step(){
-        el.textContent = text.slice(0, i);
-        i++;
-        if (i <= text.length) setTimeout(step, delay); else res();
-      })();
-    });
-  }
+  function frame(now){
+    const dt = Math.min(50, now - lastTime) / 16.6667; // normalized to ~60fps step
+    lastTime = now;
+    let active = false;
 
-  // ---- the roll ceremony -------------------------------------------------
-  let rolling = false;
-  let lastDigits = '';
-
-  async function roll(){
-    if (rolling) return;
-    rolling = true; rollBtn.disabled = true; rollBtn.textContent = 'Rolling…';
-    concatEl.textContent = ''; seedEl.textContent = ''; lastDigits = '';
-    entFill.style.width = '0%'; entBits.textContent = '0.00';
-    copyBtn.textContent = 'Copy';
-
-    const values  = cryptoFaces(N);
-    const settled = new Array(N).fill(false);
-
-    for (let i = 0; i < N; i++){
-      dice[i].classList.add('rolling');
-      setFace(i, randFace());
+    for (const d of dice){
+      if (d.state === "rolling"){
+        // chaotic tumble: jitter angular velocity, clamp speed
+        d.vrx += rand(-1.6,1.6);
+        d.vry += rand(-1.6,1.6);
+        d.vrz += rand(-1.2,1.2);
+        d.vrx = Math.max(-18, Math.min(18, d.vrx*0.96));
+        d.vry = Math.max(-18, Math.min(18, d.vry*0.96));
+        d.vrz = Math.max(-16, Math.min(16, d.vrz*0.96));
+        d.rx += d.vrx*dt;
+        d.ry += d.vry*dt;
+        d.rz += d.vrz*dt;
+        if (now >= d.settleAt) startSettle(d, now);
+        else applyTransform(d);
+        active = true;
+      } else if (d.state === "settling"){
+        const t = Math.min(1, (now - d.settle.start)/d.settle.dur);
+        const e = easeOutCubic(t);
+        d.rx = lerp(d.settle.fromX, d.settle.toX, e);
+        d.ry = lerp(d.settle.fromY, d.settle.toY, e);
+        d.rz = lerp(d.settle.fromZ, d.settle.toZ, e);
+        applyTransform(d);
+        if (t >= 1){
+          d.rx = d.settle.toX; d.ry = d.settle.toY; d.rz = d.settle.toZ;
+          applyTransform(d);
+          d.state = "done";
+          onSettled(d);
+        }
+        active = true;
+      }
     }
 
-    const start = performance.now();
-    const stagger = 16;   // ms between each die settling
-    const rollDur = 800;  // tumble duration per die
-    let lastFlicker = 0;
-    const digits = [];
-
-    await new Promise(resolve => {
-      function tick(now){
-        const elapsed = now - start;
-        const doFlicker = (now - lastFlicker) > 65;
-        if (doFlicker) lastFlicker = now;
-
-        let allSettled = true;
-        for (let i = 0; i < N; i++){
-          if (settled[i]) continue;
-          const settleAt = i * stagger + rollDur;
-          if (elapsed >= settleAt){
-            settled[i] = true;
-            dice[i].classList.remove('rolling');
-            setFace(i, values[i]);
-
-            // stream the digit into the concatenated string, highlighted
-            digits.push(values[i]);
-            const span = document.createElement('span');
-            span.className = 'new';
-            span.textContent = values[i];
-            concatEl.appendChild(span);
-            requestAnimationFrame(() => span.classList.remove('new'));
-
-            // live entropy meter
-            const bits = digits.length * LOG2_6;
-            entBits.textContent = bits.toFixed(2);
-            entFill.style.width = (bits / MAX_BITS * 100).toFixed(2) + '%';
-          } else {
-            allSettled = false;
-            if (doFlicker) setFace(i, randFace());
-          }
-        }
-        if (allSettled) resolve();
-        else requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    });
-
-    // hash the concatenated string and reveal the seed
-    lastDigits = digits.join('');
-    const seed = await sha256Hex(lastDigits);
-    await typeWrite(seedEl, seed, 16);
-
-    rolling = false; rollBtn.disabled = false; rollBtn.textContent = 'Roll 100 Dice';
+    if (active) raf = requestAnimationFrame(frame);
+    else { raf = null; finalize(); }
   }
 
-  // ---- events ------------------------------------------------------------
-  rollBtn.addEventListener('click', roll);
-  document.addEventListener('keydown', e => {
-    if (e.code === 'Space' || e.code === 'Enter'){ e.preventDefault(); roll(); }
+  /* ---------- per-die settle callbacks ---------- */
+  let settledCount = 0;
+  let concatStr = "";
+
+  function onSettled(d){
+    d.cell.classList.add("lit");
+    d.value = d.pendingValue;
+    concatStr += d.value;
+    // mirror cell in string matrix
+    const s = scells[d.i];
+    s.textContent = d.value;
+    s.classList.add("on");
+    settledCount++;
+    pfill.style.width = (settledCount) + "%";
+    pcount.textContent = settledCount;
+    rawstr.innerHTML = `<b>${concatStr}</b>`;
+    // light stepper: concat active once first die lands
+    if (settledCount === 1) setStep("concat");
+  }
+
+  /* ---------- stepper ---------- */
+  function setStep(name){
+    const map = {roll:0, concat:1, hash:2, seed:3};
+    const idx = map[name];
+    const steps = stepper.querySelectorAll(".step");
+    steps.forEach((s,i) => {
+      s.classList.remove("active","done");
+      if (i < idx) s.classList.add("done");
+      else if (i === idx) s.classList.add("active");
+    });
+  }
+  function markAllDone(){
+    stepper.querySelectorAll(".step").forEach(s => {
+      s.classList.remove("active");
+      s.classList.add("done");
+    });
+  }
+
+  /* ---------- roll control ---------- */
+  let rolling = false;
+
+  function reset(){
+    if (raf){ cancelAnimationFrame(raf); raf = null; }
+    settledCount = 0;
+    concatStr = "";
+    pfill.style.width = "0%";
+    pcount.textContent = "0";
+    rawstr.innerHTML = "";
+    for (const d of dice){
+      d.state = "idle";
+      d.rx = d.ry = d.rz = 0;
+      d.vrx = d.vry = d.vrz = 0;
+      d.value = 0;
+      d.cell.classList.remove("lit");
+      applyTransform(d);
+    }
+    for (const s of scells){
+      s.classList.remove("on");
+      s.textContent = "·";
+    }
+    seedBlock.innerHTML =
+      `<div class="seed-pending"><div class="spinner"></div> Rolling 100 dice…</div>`;
+  }
+
+  function roll(){
+    if (rolling) return;
+    rolling = true;
+    rollBtn.disabled = true;
+    reset();
+
+    const values = rollValues();
+    const t0 = performance.now();
+    // cascade settle times: ~0.85s → ~3.25s
+    const order = [...dice.keys()].sort(() => Math.random() - 0.5);
+    order.forEach((idx, k) => {
+      const d = dice[idx];
+      d.pendingValue = values[idx];
+      d.settleAt = t0 + 850 + k*23 + rand(0,110);
+      d.state = "rolling";
+      d.vrx = rand(6,16)*(Math.random()<0.5?-1:1);
+      d.vry = rand(6,16)*(Math.random()<0.5?-1:1);
+      d.vrz = rand(4,12)*(Math.random()<0.5?-1:1);
+    });
+    // also stagger the *start* of motion for a wave-in feel
+    dice.forEach((d,k) => {
+      d._delay = t0 + (k%10)*6 + Math.floor(k/10)*4;
+    });
+
+    setStep("roll");
+    lastTime = performance.now();
+    raf = requestAnimationFrame(frame);
+
+    // re-enable after finalize
+    const check = setInterval(() => {
+      if (!rolling){ clearInterval(check); rollBtn.disabled = false; }
+    }, 120);
+  }
+
+  /* ---------- finalize: SHA-256 via WebCrypto ---------- */
+  async function finalize(){
+    setStep("hash");
+    // small dramatic pause with shimmer
+    seedBlock.innerHTML =
+      `<div class="seed-pending"><div class="spinner"></div> Computing SHA-256 digest…</div>`;
+    await new Promise(r => setTimeout(r, 480));
+
+    let hex;
+    try {
+      const enc = new TextEncoder().encode(concatStr);
+      const digest = await crypto.subtle.digest("SHA-256", enc);
+      hex = [...new Uint8Array(digest)]
+              .map(b => b.toString(16).padStart(2,"0")).join("");
+    } catch (e){
+      seedBlock.innerHTML = `<div class="seed-pending">⚠ crypto.subtle unavailable.</div>`;
+      rolling = false;
+      return;
+    }
+
+    setStep("seed");
+    renderSeed(hex);
+    markAllDone();
+    rolling = false;
+  }
+
+  function renderSeed(hex){
+    // group into 4-char blocks for readability
+    const groups = [];
+    for (let i=0;i<hex.length;i+=4){
+      groups.push(`<span class="grp">${hex.slice(i,i+4)}</span>`);
+    }
+    const html = groups.join(" ");
+    // character "scramble-in" effect
+    seedBlock.innerHTML = `
+      <div class="seed-label">
+        <span>SEED · SHA-256</span>
+        <button class="copy-btn" id="copyBtn">Copy</button>
+      </div>
+      <div class="seed-hex" id="seedHex"></div>
+    `;
+    const seedHex = document.getElementById("seedHex");
+    const chars = "0123456789abcdef";
+    const finalHtml = html;
+    // animate: reveal group by group
+    let gi = 0;
+    const groupsPlain = [];
+    for (let i=0;i<hex.length;i+=4) groupsPlain.push(hex.slice(i,i+4));
+    function revealNext(){
+      if (gi >= groupsPlain.length){
+        seedHex.innerHTML = finalHtml;
+        return;
+      }
+      // revealed groups so far
+      let out = "";
+      for (let j=0;j<gi;j++) out += `<span class="grp">${groupsPlain[j]}</span> `;
+      // current group: scramble some chars for a "decoding" feel
+      const cur = groupsPlain[gi];
+      for (const c of cur){
+        if (Math.random()<0.5){
+          out += `<span class="grp" style="opacity:0.55">${chars[(Math.random()*16)|0]}</span>`;
+        } else {
+          out += `<span class="grp">${c}</span>`;
+        }
+      }
+      out += " ";
+      // dimmed placeholders for remaining groups
+      for (let j=gi+1;j<groupsPlain.length;j++) out += `<span class="grp" style="opacity:0.2">····</span> `;
+      seedHex.innerHTML = out;
+      gi++;
+      setTimeout(revealNext, 55);
+    }
+    revealNext();
+
+    const copyBtn = document.getElementById("copyBtn");
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(hex).then(() => {
+        copyBtn.textContent = "Copied ✓";
+        copyBtn.classList.add("ok");
+        setTimeout(() => { copyBtn.textContent = "Copy"; copyBtn.classList.remove("ok"); }, 1400);
+      });
+    });
+  }
+
+  /* ---------- wire up ---------- */
+  rollBtn.addEventListener("click", roll);
+  window.addEventListener("keydown", e => {
+    if (e.code === "Space" && !rolling && document.activeElement !== rollBtn){
+      e.preventDefault(); roll();
+    }
   });
-  copyBtn.addEventListener('click', async () => {
-    const t = seedEl.textContent;
-    if (!t) return;
-    try { await navigator.clipboard.writeText(t); copyBtn.textContent = 'Copied!'; }
-    catch { copyBtn.textContent = 'Press ⌘C'; }
-    setTimeout(() => copyBtn.textContent = 'Copy', 1400);
-  });
+
+  // idle entrance: gentle staggered spin so the grid feels alive
+  function idleIntro(){
+    let k = 0;
+    for (const d of dice){
+      d.state = "settling";
+      const base = SHOW[(Math.random()*6|0)+1];
+      d.settle = {
+        fromX: base.x + 360, fromY: base.y + 360, fromZ: 360,
+        toX: 0, toY: 0, toZ: 0,
+        start: performance.now() + k*8, dur: 700
+      };
+      // start from a tumbled orientation
+      d.rx = base.x + 360; d.ry = base.y + 360; d.rz = 360;
+      k++;
+    }
+    lastTime = performance.now();
+    // patch frame to treat intro as settling; values just decorative
+    function introFrame(now){
+      let active = false;
+      for (const d of dice){
+        if (d.state === "settling"){
+          const t = Math.min(1, (now - d.settle.start)/d.settle.dur);
+          if (t < 0){ active = true; continue; }
+          const e = easeOutCubic(t);
+          d.rx = lerp(d.settle.fromX, d.settle.toX, e);
+          d.ry = lerp(d.settle.fromY, d.settle.toY, e);
+          d.rz = lerp(d.settle.fromZ, d.settle.toZ, e);
+          applyTransform(d);
+          if (t >= 1){ d.state = "idle"; d.rx=d.ry=d.rz=0; applyTransform(d); }
+          else active = true;
+        }
+      }
+      if (active) raf = requestAnimationFrame(introFrame);
+      else raf = null;
+    }
+    raf = requestAnimationFrame(introFrame);
+  }
+  idleIntro();
+
+  // initial stepper state
+  setStep("roll");
 })();
 </script>
 </body>
