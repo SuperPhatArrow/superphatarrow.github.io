@@ -3,756 +3,656 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bitcoin Seed Generator — 100 Dice Entropy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Dice Entropy → Bitcoin Seed</title>
 <style>
   :root{
     --bg:#070b16;
-    --bg2:#0d1326;
-    --panel:rgba(255,255,255,0.035);
-    --panel-strong:rgba(255,255,255,0.06);
-    --border:rgba(255,255,255,0.08);
-    --border-strong:rgba(255,255,255,0.14);
-    --text:#eef2fb;
-    --muted:#8a93ab;
-    --dim:#59627a;
-    --accent:#f7931a;
-    --accent2:#ffc14d;
-    --accent-deep:#c06a00;
-    --good:#3ddc97;
-    --shadow:0 20px 60px -20px rgba(0,0,0,0.7);
+    --bg2:#0d1426;
+    --panel:rgba(255,255,255,.045);
+    --panel-brd:rgba(255,255,255,.09);
+    --ink:#eaeefb;
+    --muted:#8b95ad;
+    --orange:#f7931a;
+    --orange2:#ffb347;
+    --gold:#ffd166;
+    --green:#3dd68c;
+    --blue:#4aa8ff;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
-
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
-    font-family:'Inter',system-ui,sans-serif;
-    background:var(--bg);
-    color:var(--text);
+    font-family:var(--sans);
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 700px at 78% -8%, rgba(247,147,26,.16), transparent 60%),
+      radial-gradient(900px 600px at 8% 108%, rgba(74,168,255,.12), transparent 60%),
+      radial-gradient(700px 500px at 50% 50%, rgba(255,255,255,.025), transparent 70%),
+      linear-gradient(180deg,var(--bg2),var(--bg) 60%);
     min-height:100vh;
     overflow-x:hidden;
-    line-height:1.5;
     -webkit-font-smoothing:antialiased;
   }
-
-  /* ---------- animated background ---------- */
-  .bg-layer{
-    position:fixed;inset:0;z-index:-2;overflow:hidden;
-    background:
-      radial-gradient(1200px 800px at 80% -10%, rgba(247,147,26,0.10), transparent 60%),
-      radial-gradient(1000px 700px at -10% 110%, rgba(60,90,220,0.10), transparent 60%),
-      linear-gradient(180deg,#070b16 0%, #0a0f1f 50%, #070b16 100%);
-  }
-  .orb{
-    position:fixed;border-radius:50%;filter:blur(70px);opacity:0.5;z-index:-1;
-    pointer-events:none;mix-blend-mode:screen;
-    animation:drift 22s ease-in-out infinite alternate;
-  }
-  .orb.a{width:480px;height:480px;background:radial-gradient(circle,rgba(247,147,26,0.55),transparent 70%);top:-120px;right:-80px;animation-delay:0s}
-  .orb.b{width:520px;height:520px;background:radial-gradient(circle,rgba(255,193,77,0.35),transparent 70%);bottom:-160px;left:-120px;animation-delay:-8s}
-  .orb.c{width:360px;height:360px;background:radial-gradient(circle,rgba(80,120,255,0.3),transparent 70%);top:40%;left:50%;animation-delay:-14s}
-  @keyframes drift{
-    0%{transform:translate(0,0) scale(1)}
-    100%{transform:translate(40px,30px) scale(1.12)}
-  }
-
-  /* faint grid texture */
-  .grid-tex{
-    position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.4;
+  /* faint moving grid */
+  body::before{
+    content:"";
+    position:fixed;inset:0;
     background-image:
-      linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);
+      linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
     background-size:46px 46px;
-    mask-image:radial-gradient(circle at 50% 30%,black,transparent 75%);
+    mask-image:radial-gradient(900px 700px at 50% 30%,#000 30%,transparent 80%);
+    -webkit-mask-image:radial-gradient(900px 700px at 50% 30%,#000 30%,transparent 80%);
+    pointer-events:none;
+    z-index:0;
+    animation:drift 40s linear infinite;
   }
+  @keyframes drift{to{background-position:46px 46px,46px 46px}}
 
-  /* ---------- layout ---------- */
-  .wrap{
-    max-width:1080px;margin:0 auto;padding:42px 22px 80px;
+  .wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:30px 20px 80px}
+
+  header.hero{text-align:center;margin-bottom:26px}
+  .crest{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:7px 14px;border-radius:999px;
+    background:rgba(247,147,26,.10);border:1px solid rgba(247,147,26,.32);
+    color:var(--orange2);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+    font-weight:600;
   }
-  header.hero{text-align:center;margin-bottom:34px}
-  .eyebrow{
-    display:inline-flex;align-items:center;gap:8px;
-    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;
-    text-transform:uppercase;color:var(--accent2);
-    background:rgba(247,147,26,0.08);border:1px solid rgba(247,147,26,0.25);
-    padding:6px 14px;border-radius:999px;margin-bottom:18px;
-  }
-  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 1.6s infinite}
-  @keyframes pulse{50%{opacity:0.35}}
+  .crest .btc{color:var(--orange);font-size:15px}
   h1{
-    font-family:'Space Grotesk',sans-serif;font-weight:700;
-    font-size:clamp(30px,5vw,52px);line-height:1.05;margin:0 0 12px;
-    letter-spacing:-0.02em;
-    background:linear-gradient(180deg,#fff 0%, #c8d0e6 100%);
+    font-size:clamp(28px,5.4vw,46px);line-height:1.06;margin:14px 0 8px;font-weight:800;
+    letter-spacing:-.02em;
+    background:linear-gradient(180deg,#fff,#cfd6ea 60%,#9aa3bd);
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
-  h1 .hl{
-    background:linear-gradient(90deg,var(--accent),var(--accent2));
+  h1 .em{
+    background:linear-gradient(92deg,var(--orange),var(--gold) 60%,var(--orange2));
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
-  .sub{color:var(--muted);max-width:620px;margin:0 auto;font-size:15px}
-  .sub b{color:#cfd6e8;font-weight:600}
+  .sub{color:var(--muted);max-width:680px;margin:0 auto;font-size:15px;line-height:1.55}
 
-  /* ---------- stepper ---------- */
-  .stepper{
-    display:flex;align-items:center;justify-content:center;gap:6px;
-    margin:26px auto 30px;flex-wrap:wrap;
+  /* control bar */
+  .bar{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+    margin:22px 0 6px;
   }
-  .step{
-    display:flex;align-items:center;gap:9px;
-    font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:0.04em;
-    color:var(--dim);padding:8px 14px;border-radius:999px;
-    border:1px solid var(--border);background:var(--panel);
-    transition:all .35s ease;
-  }
-  .step .num{
-    width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
-    font-size:10px;background:rgba(255,255,255,0.06);color:var(--muted);font-weight:700;
-    transition:all .35s ease;
-  }
-  .step.active{color:var(--accent2);border-color:rgba(247,147,26,0.5);background:rgba(247,147,26,0.08)}
-  .step.active .num{background:var(--accent);color:#1a0f00;box-shadow:0 0 14px rgba(247,147,26,0.7)}
-  .step.done{color:var(--good);border-color:rgba(61,220,151,0.35)}
-  .step.done .num{background:var(--good);color:#002418}
-  .sep{width:22px;height:1px;background:var(--border)}
-
-  /* ---------- panels ---------- */
-  .panel{
-    background:linear-gradient(180deg,var(--panel-strong),var(--panel));
-    border:1px solid var(--border);border-radius:22px;
-    box-shadow:var(--shadow);
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  }
-
-  /* ---------- dice arena ---------- */
-  .arena-wrap{padding:26px 22px 22px;margin-bottom:22px;position:relative;overflow:hidden}
-  .arena-wrap::before{
-    content:"";position:absolute;inset:0;border-radius:22px;pointer-events:none;
-    background:radial-gradient(120% 80% at 50% 120%, rgba(247,147,26,0.14), transparent 60%);
-  }
-  .arena{
-    --sz:clamp(30px,4.6vw,48px);
-    --d:calc(var(--sz)/2);
-    display:grid;grid-template-columns:repeat(10,var(--sz));grid-auto-rows:var(--sz);
-    gap:clamp(6px,1vw,10px);justify-content:center;
-    perspective:900px;margin:0 auto;width:fit-content;position:relative;z-index:1;
-  }
-  .cell{
-    width:var(--sz);height:var(--sz);position:relative;
-    perspective:340px;
-  }
-  .cell::after{ /* settle ring */
-    content:"";position:absolute;inset:-3px;border-radius:10px;
-    border:1px solid transparent;transition:all .4s ease;pointer-events:none;
-  }
-  .cell.lit::after{
-    border-color:rgba(247,147,26,0.55);
-    box-shadow:0 0 14px rgba(247,147,26,0.35), inset 0 0 8px rgba(247,147,26,0.18);
-  }
-
-  .cube{
-    position:absolute;inset:0;transform-style:preserve-3d;
-    transform:rotateX(0deg) rotateY(0deg);
-    will-change:transform;
-    filter:drop-shadow(0 4px 6px rgba(0,0,0,0.45));
-  }
-  .face{
-    position:absolute;inset:0;border-radius:14%;
-    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
-    padding:13%;
-    background:
-      radial-gradient(120% 120% at 30% 25%, #ffffff 0%, #f3f1ea 55%, #d9d4c7 100%);
-    border:1px solid rgba(0,0,0,0.18);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.12);
-    backface-visibility:hidden;
-  }
-  .pip{
-    width:100%;height:100%;border-radius:50%;align-self:center;justify-self:center;
-    max-width:30%;max-height:30%;
-    background:radial-gradient(circle at 35% 30%, #434343, #111 70%);
-    box-shadow:inset 0 1px 1px rgba(255,255,255,0.25), 0 1px 1px rgba(0,0,0,0.3);
-  }
-
-  /* controls */
-  .controls{
-    display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;
-    margin-top:22px;position:relative;z-index:1;
+  button,.toggle{
+    font-family:var(--sans);cursor:pointer;border:0;
   }
   .btn{
-    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;
-    letter-spacing:0.02em;color:#1a0f00;
-    background:linear-gradient(180deg,var(--accent2),var(--accent));
-    border:none;border-radius:999px;padding:14px 30px;cursor:pointer;
-    box-shadow:0 10px 30px -8px rgba(247,147,26,0.7), inset 0 1px 0 rgba(255,255,255,0.5);
-    transition:transform .15s ease, box-shadow .25s ease, filter .2s ease;
-    display:inline-flex;align-items:center;gap:10px;
+    display:inline-flex;align-items:center;gap:9px;
+    padding:12px 22px;border-radius:12px;font-weight:700;font-size:15px;
+    color:#241400;
+    background:linear-gradient(180deg,var(--orange2),var(--orange));
+    box-shadow:0 8px 24px -8px rgba(247,147,26,.7),inset 0 1px 0 rgba(255,255,255,.4);
+    transition:transform .12s ease,box-shadow .2s ease,filter .2s;
   }
-  .btn:hover{transform:translateY(-2px);box-shadow:0 16px 38px -8px rgba(247,147,26,0.85), inset 0 1px 0 rgba(255,255,255,0.5)}
-  .btn:active{transform:translateY(0)}
-  .btn:disabled{filter:saturate(0.4) brightness(0.7);cursor:not-allowed;transform:none;box-shadow:none}
-  .btn .icn{font-size:18px;line-height:1}
-  .btn.ghost{
-    background:transparent;color:var(--muted);border:1px solid var(--border-strong);
-    box-shadow:none;
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:grayscale(.3)}
+  .chip{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 14px;border-radius:11px;font-size:13.5px;font-weight:600;
+    color:var(--ink);background:var(--panel);border:1px solid var(--panel-brd);
+    cursor:pointer;user-select:none;transition:.18s;
   }
-  .btn.ghost:hover{color:var(--text);border-color:var(--accent2);box-shadow:none;background:var(--panel)}
+  .chip:hover{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07)}
+  .chip .dotsw{width:9px;height:9px;border-radius:50%;background:var(--muted);transition:.2s}
+  .chip.on .dotsw{background:var(--green);box-shadow:0 0 10px var(--green)}
+  .chip .ic{font-size:15px}
+  .seg{
+    display:inline-flex;background:var(--panel);border:1px solid var(--panel-brd);
+    border-radius:11px;overflow:hidden;
+  }
+  .seg button{
+    padding:10px 14px;background:transparent;color:var(--muted);font-weight:600;font-size:13px;
+    border:0;cursor:pointer;transition:.15s;
+  }
+  .seg button.active{background:rgba(247,147,26,.16);color:var(--orange2)}
 
-  .progress{
-    display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);
+  .panel{
+    background:var(--panel);border:1px solid var(--panel-brd);border-radius:18px;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    padding:18px 20px;margin-top:18px;
   }
-  .pbar{width:160px;height:6px;border-radius:3px;background:rgba(255,255,255,0.07);overflow:hidden}
-  .pfill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s ease;border-radius:3px}
-  .pcount{min-width:74px}
-  .pcount b{color:var(--accent2);font-weight:700}
+  .panel h2{margin:0 0 4px;font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .panel .hint{color:var(--muted);font-size:13px;margin-top:4px}
 
-  /* ---------- results grid ---------- */
-  .results{display:grid;grid-template-columns:1fr 1fr;gap:22px}
-  @media (max-width:760px){.results{grid-template-columns:1fr}}
+  /* stats row */
+  .stats{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center}
+  .stat{display:flex;flex-direction:column;gap:2px}
+  .stat .k{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .stat .v{font-family:var(--mono);font-size:20px;font-weight:700}
+  .stat .v small{font-size:12px;color:var(--muted);font-weight:500}
+  .v.ok{color:var(--green)}
 
-  .card{padding:22px}
-  .card h3{
-    font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
-    letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;
-    display:flex;align-items:center;gap:8px;
+  /* entropy meter */
+  .meter{position:relative;height:16px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:8px;border:1px solid rgba(255,255,255,.07)}
+  .meter .fill{
+    position:absolute;inset:0 auto 0 0;width:0%;
+    background:linear-gradient(90deg,#ff7a18,var(--orange) 45%,var(--gold));
+    box-shadow:0 0 18px rgba(247,147,26,.65);
+    transition:width .25s ease;
   }
-  .card .hint{font-size:12px;color:var(--dim);margin:0 0 16px;font-family:'JetBrains Mono',monospace}
+  .meter .fill.full{background:linear-gradient(90deg,var(--orange),var(--gold),var(--green))}
+  .meter .thresh{position:absolute;top:-3px;bottom:-3px;left:calc(256 / 258.4965 * 100%);width:2px;background:rgba(255,255,255,.55);box-shadow:0 0 8px rgba(255,255,255,.6)}
+  .meter .thresh::after{content:"256";position:absolute;top:-17px;left:50%;transform:translateX(-50%);font:700 9px var(--mono);color:#cfd6ea;white-space:nowrap}
+  .meterlabels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)}
 
-  /* dice string matrix */
-  .strmatrix{
-    display:grid;grid-template-columns:repeat(10,1fr);gap:6px;
-    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(13px,2vw,17px);
+  /* dice */
+  .table{perspective:1400px}
+  .grid{
+    display:grid;grid-template-columns:repeat(10,1fr);gap:clamp(6px,1.4vw,11px);
+    margin:10px 0 2px;
   }
-  .scell{
-    aspect-ratio:1;display:grid;place-items:center;border-radius:7px;
-    background:rgba(255,255,255,0.025);border:1px solid var(--border);
-    color:var(--dim);transition:all .3s ease;
+  .die{
+    --s:clamp(30px,6.4vw,52px);
+    width:var(--s);height:var(--s);position:relative;
+    perspective:420px;
   }
-  .scell.on{
-    color:var(--accent2);background:rgba(247,147,26,0.1);border-color:rgba(247,147,26,0.3);
-    animation:pop .35s ease;
+  .die .shadow{
+    position:absolute;left:8%;right:8%;bottom:-12%;height:18%;
+    background:radial-gradient(50% 50% at 50% 50%,rgba(0,0,0,.55),transparent 70%);
+    filter:blur(2px);transition:.3s;
   }
-  @keyframes pop{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  .cube{
+    position:absolute;inset:0;transform-style:preserve-3d;
+    transition:transform 1.05s cubic-bezier(.16,.84,.28,1);
+    transform:rotateX(-20deg) rotateY(24deg);
+  }
+  .die.rolling .cube{transition:transform 1.05s cubic-bezier(.14,.82,.25,1)}
+  .die.settled .cube{transition:transform .5s cubic-bezier(.2,.8,.25,1)}
+  .face{
+    position:absolute;inset:0;display:grid;
+    grid-template:repeat(3,1fr)/repeat(3,1fr);
+    padding:13%;border-radius:18%;
+    background:
+      linear-gradient(145deg,#fdfdfd,#e9edf6 60%,#d7dce8);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.6),inset 0 -4px 8px rgba(0,0,0,.12);
+  }
+  .face .dot{align-self:center;justify-self:center;width:21%;height:21%;border-radius:50%;opacity:0}
+  .face .dot.on{
+    opacity:1;
+    background:radial-gradient(circle at 35% 30%,#5a6478,#1b2233 70%);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.4);
+  }
+  .face.front  { transform:translateZ(calc(var(--s)/2)); }
+  .face.back   { transform:rotateY(180deg) translateZ(calc(var(--s)/2)); }
+  .face.right  { transform:rotateY(90deg)  translateZ(calc(var(--s)/2)); }
+  .face.left   { transform:rotateY(-90deg) translateZ(calc(var(--s)/2)); }
+  .face.top    { transform:rotateX(-90deg) translateZ(calc(var(--s)/2)); }
+  .face.bottom { transform:rotateX(90deg)  translateZ(calc(var(--s)/2)); }
 
-  .rawstr{
-    margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--dim);
-    word-break:break-all;line-height:1.7;
-  }
-  .rawstr b{color:#cfd6e8;font-weight:500}
+  .die.flash .cube{filter:drop-shadow(0 0 8px rgba(247,147,26,.9))}
 
-  /* seed card */
-  .seed-block{
-    position:relative;border-radius:14px;padding:18px 16px;
-    background:linear-gradient(180deg,rgba(247,147,26,0.07),rgba(247,147,26,0.02));
-    border:1px solid rgba(247,147,26,0.22);
-    min-height:96px;display:flex;flex-direction:column;justify-content:center;
+  /* concat */
+  .concat{
+    font-family:var(--mono);font-size:clamp(13px,2.4vw,16px);
+    letter-spacing:.14em;line-height:1.7;word-break:break-all;
+    color:#cdd4e8;min-height:1.7em;
   }
-  .seed-label{
-    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;
-    text-transform:uppercase;color:var(--accent2);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;
-  }
-  .seed-hex{
-    font-family:'JetBrains Mono',monospace;font-size:clamp(13px,1.7vw,16px);font-weight:700;
-    letter-spacing:0.02em;line-height:1.7;color:#fff;word-break:break-all;
-    text-shadow:0 0 18px rgba(247,147,26,0.35);
-  }
-  .seed-hex .grp{color:var(--accent2)}
-  .seed-hex .flip{display:inline-block;min-width:0.6em}
+  .concat .n{color:var(--gold);text-shadow:0 0 8px rgba(255,209,102,.55);transition:.15s}
+  .concat .n.new{color:#fff;text-shadow:0 0 12px var(--orange)}
 
-  .seed-pending{
-    font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:13px;
-    display:flex;align-items:center;gap:10px;
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .copy{
+    display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:9px;
+    background:rgba(255,255,255,.06);border:1px solid var(--panel-brd);color:var(--ink);
+    font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s;
   }
-  .spinner{width:16px;height:16px;border:2px solid rgba(247,147,26,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
+  .copy:hover{border-color:rgba(247,147,26,.5);color:var(--orange2)}
+  .copy.done{color:var(--green);border-color:rgba(61,214,140,.5)}
 
-  .copy-btn{
-    background:rgba(255,255,255,0.05);border:1px solid var(--border-strong);color:var(--muted);
-    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
-    padding:4px 10px;border-radius:999px;cursor:pointer;transition:all .2s ease;
+  /* seed */
+  .seed{
+    font-family:var(--mono);font-size:clamp(13px,2.2vw,16px);
+    letter-spacing:.08em;word-break:break-all;line-height:1.85;
+    color:#dfe5f5;padding:6px 2px;min-height:1.85em;
   }
-  .copy-btn:hover{color:var(--accent2);border-color:var(--accent2)}
-  .copy-btn.ok{color:var(--good);border-color:var(--good)}
-
-  .stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px}
-  .stat{flex:1;min-width:90px}
-  .stat .k{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim)}
-  .stat .v{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;color:#cfd6e8;margin-top:2px}
-  .stat .v small{font-size:11px;color:var(--muted);font-weight:500}
-
-  .footer-note{
-    text-align:center;margin-top:34px;font-size:12px;color:var(--dim);
-    font-family:'JetBrains Mono',monospace;letter-spacing:0.03em;
+  .seed .h{opacity:0;transition:opacity .25s,text-shadow .25s}
+  .seed .h.up{opacity:1}
+  .seed .h.glow{text-shadow:0 0 10px rgba(247,147,26,.8)}
+  .seed .pair{display:inline}
+  .seed .sep{color:rgba(255,255,255,.18)}
+  .seedbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .badge{
+    display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;
+    font-size:12px;font-weight:700;letter-spacing:.04em;
+    background:rgba(61,214,140,.12);border:1px solid rgba(61,214,140,.4);color:var(--green);
   }
-  .footer-note b{color:var(--muted)}
-  .kbd{
-    font-family:'JetBrains Mono',monospace;font-size:10px;
-    background:rgba(255,255,255,0.06);border:1px solid var(--border);border-bottom-width:2px;
-    padding:1px 6px;border-radius:5px;color:var(--muted);
+  .badge.warn{background:rgba(247,147,26,.1);border-color:rgba(247,147,26,.35);color:var(--orange2)}
+
+  /* mnemonic */
+  .mnem{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px}
+  .word{
+    display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:10px;
+    background:rgba(255,255,255,.04);border:1px solid var(--panel-brd);
+    font-family:var(--mono);font-size:13px;opacity:0;transform:translateY(6px);
+    transition:.3s;
+  }
+  .word.show{opacity:1;transform:none}
+  .word .idx{color:var(--muted);font-size:11px;width:22px;text-align:right}
+  .word .w{color:#e7ecfa;font-weight:600}
+
+  .foot{margin-top:30px;color:var(--muted);font-size:12.5px;line-height:1.6;text-align:center}
+  .foot code{font-family:var(--mono);color:#cdd4e8;background:rgba(255,255,255,.05);padding:1px 6px;border-radius:5px}
+
+  .skel{color:var(--muted);font-style:italic;font-size:13px}
+
+  /* finale particles */
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:50}
+  .spark{position:absolute;width:8px;height:8px;border-radius:50%;opacity:0}
+
+  @media (max-width:560px){
+    .grid{grid-template-columns:repeat(10,1fr);gap:5px}
+    .die{--s:clamp(26px,8vw,40px)}
+    .panel{padding:14px}
   }
 </style>
 </head>
 <body>
-<div class="bg-layer"></div>
-<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
-<div class="grid-tex"></div>
-
+<canvas id="fx"></canvas>
 <div class="wrap">
+
   <header class="hero">
-    <div class="eyebrow"><span class="dot"></span> SHA-256 · WebCrypto · True CSPRNG</div>
-    <h1>Generate a Bitcoin Seed from <span class="hl">100 Dice Rolls</span></h1>
-    <p class="sub">Roll 100 six-sided dice, concatenate the raw outcomes into a single string, and hash it with <b>SHA-256</b>. The resulting digest is a <b>256-bit entropy source</b> — the kind you could feed into a BIP39 mnemonic generator. Every roll below uses your browser's cryptographic RNG.</p>
+    <div class="crest"><span class="btc">₿</span> True Randomness · No Computer RNG</div>
+    <h1>Roll 100 Dice.<br><span class="em">Forge a Bitcoin Seed.</span></h1>
+    <p class="sub">One hundred physical six-sided dice yield 100·log₂(6) ≈ <b>258.5 bits</b> of entropy — more than the 256 bits that secure a seed. Their values are concatenated and hashed with <b>SHA-256</b> to produce a 256-bit wallet seed, then encoded as a 24-word BIP39 mnemonic.</p>
   </header>
 
-  <div class="stepper" id="stepper">
-    <div class="step" data-step="roll"><span class="num">1</span> Roll 100 dice</div>
-    <div class="sep"></div>
-    <div class="step" data-step="concat"><span class="num">2</span> Concatenate</div>
-    <div class="sep"></div>
-    <div class="step" data-step="hash"><span class="num">3</span> SHA-256</div>
-    <div class="sep"></div>
-    <div class="step" data-step="seed"><span class="num">4</span> Seed</div>
+  <div class="bar">
+    <button class="btn" id="rollBtn">
+      <span class="ic">🎲</span> Roll 100 Dice
+    </button>
+    <div class="seg" id="speed">
+      <button data-spd="cinema" class="active">Cinematic</button>
+      <button data-spd="fast">Fast</button>
+      <button data-spd="instant">Instant</button>
+    </div>
+    <div class="chip on" id="sound"><span class="dotsw"></span><span class="ic">🔊</span> Sound</div>
   </div>
 
-  <div class="panel arena-wrap">
-    <div class="arena" id="arena"></div>
-    <div class="controls">
-      <button class="btn" id="rollBtn"><span class="icn">🎲</span> Roll the dice</button>
-      <div class="progress">
-        <div class="pbar"><div class="pfill" id="pfill"></div></div>
-        <div class="pcount"><b id="pcount">0</b> / 100 settled</div>
-      </div>
+  <!-- entropy / stats -->
+  <section class="panel">
+    <div class="stats">
+      <div class="stat"><span class="k">Dice Rolled</span><span class="v" id="cnt">0<small>/100</small></span></div>
+      <div class="stat"><span class="k">Entropy</span><span class="v" id="bits">0.0<small> bits</small></span></div>
+      <div class="stat"><span class="k">Digits</span><span class="v" id="dlen">0<small>/100</small></span></div>
+      <div class="stat"><span class="k">Status</span><span class="v" id="status">Idle</span></div>
     </div>
-  </div>
-
-  <div class="results">
-    <div class="panel card">
-      <h3>① Dice outcomes</h3>
-      <p class="hint">// 100 digits concatenated in roll order</p>
-      <div class="strmatrix" id="strmatrix"></div>
-      <div class="rawstr" id="rawstr"></div>
+    <div class="meter" style="margin-top:16px">
+      <div class="fill" id="fill"></div>
+      <div class="thresh"></div>
     </div>
+    <div class="meterlabels"><span>0 bits</span><span id="mtag">258.5 bits target</span></div>
+  </section>
 
-    <div class="panel card">
-      <h3>② SHA-256 → Seed</h3>
-      <p class="hint">// crypto.subtle.digest("SHA-256", utf8)</p>
-      <div class="seed-block" id="seedBlock">
-        <div class="seed-pending" id="seedPending">Press <b>“Roll the dice”</b> to begin…</div>
-      </div>
-      <div class="stats">
-        <div class="stat"><div class="k">Entropy</div><div class="v">≈ 258.5<small> bits</small></div></div>
-        <div class="stat"><div class="k">Digest</div><div class="v">256<small> bits</small></div></div>
-        <div class="stat"><div class="k">Hex length</div><div class="v">64<small> chars</small></div></div>
-      </div>
+  <!-- dice table -->
+  <section class="panel table">
+    <h2>The Roll</h2>
+    <div class="hint">Each die is a cryptographically-uniform 1–6. Watch them tumble and settle on their true value.</div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- concatenation -->
+  <section class="panel">
+    <div class="seedbar">
+      <h2 style="margin:0">Concatenated Dice String</h2>
+      <button class="copy" data-copy="concat"><span>⧉</span> Copy</button>
     </div>
-  </div>
+    <div class="hint">The 100 face values, joined into a single string — the SHA-256 preimage.</div>
+    <div class="concat" id="concat"></div>
+  </section>
 
-  <p class="footer-note">
-    Randomness: <b>crypto.getRandomValues</b> · Hashing: <b>crypto.subtle.digest</b> · Press <span class="kbd">Space</span> to roll
+  <!-- seed -->
+  <section class="panel">
+    <div class="seedbar">
+      <h2 style="margin:0">SHA-256 → 256-bit Seed</h2>
+      <button class="copy" data-copy="seed"><span>⧉</span> Copy Hex</button>
+      <span class="badge" id="seedBadge" style="display:none">✓ 256-bit</span>
+    </div>
+    <div class="hint">seed = SHA-256( diceString ). Deterministic: same dice, same seed. Random: because the dice are.</div>
+    <div class="seed" id="seed"></div>
+  </section>
+
+  <!-- mnemonic -->
+  <section class="panel">
+    <div class="seedbar">
+      <h2 style="margin:0">BIP39 Recovery Phrase · 24 words</h2>
+      <button class="copy" data-copy="mnem"><span>⧉</span> Copy</button>
+    </div>
+    <div class="hint">The 256-bit seed + 8-bit checksum, split into twenty-four 11-bit indices into the BIP39 English wordlist.</div>
+    <div class="mnem" id="mnem"><div class="skel">Roll the dice to generate your recovery phrase…</div></div>
+  </section>
+
+  <p class="foot">
+    Entropy source: <code>crypto.getRandomValues</code> per die (stands in for physical dice). Hashing via <code>crypto.subtle.digest("SHA-256")</code>.<br>
+    Educational simulation. Never type a real seed into anything you didn't build and audit yourself.
   </p>
 </div>
 
 <script>
 (() => {
   "use strict";
+  const WORDLIST = "abandon ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual adapt add addict address adjust admit adult advance advice aerobic affair afford afraid again age agent agree ahead aim air airport aisle alarm album alcohol alert alien all alley allow almost alone alpha already also alter always amateur amazing among amount amused analyst anchor ancient anger angle angry animal ankle announce annual another answer antenna antique anxiety any apart apology appear apple approve april arch arctic area arena argue arm armed armor army around arrange arrest arrive arrow art artefact artist artwork ask aspect assault asset assist assume asthma athlete atom attack attend attitude attract auction audit august aunt author auto autumn average avocado avoid awake aware away awesome awful awkward axis baby bachelor bacon badge bag balance balcony ball bamboo banana banner bar barely bargain barrel base basic basket battle beach bean beauty because become beef before begin behave behind believe below belt bench benefit best betray better between beyond bicycle bid bike bind biology bird birth bitter black blade blame blanket blast bleak bless blind blood blossom blouse blue blur blush board boat body boil bomb bone bonus book boost border boring borrow boss bottom bounce box boy bracket brain brand brass brave bread breeze brick bridge brief bright bring brisk broccoli broken bronze broom brother brown brush bubble buddy budget buffalo build bulb bulk bullet bundle bunker burden burger burst bus business busy butter buyer buzz cabbage cabin cable cactus cage cake call calm camera camp can canal cancel candy cannon canoe canvas canyon capable capital captain car carbon card cargo carpet carry cart case cash casino castle casual cat catalog catch category cattle caught cause caution cave ceiling celery cement census century cereal certain chair chalk champion change chaos chapter charge chase chat cheap check cheese chef cherry chest chicken chief child chimney choice choose chronic chuckle chunk churn cigar cinnamon circle citizen city civil claim clap clarify claw clay clean clerk clever click client cliff climb clinic clip clock clog close cloth cloud clown club clump cluster clutch coach coast coconut code coffee coil coin collect color column combine come comfort comic common company concert conduct confirm congress connect consider control convince cook cool copper copy coral core corn correct cost cotton couch country couple course cousin cover coyote crack cradle craft cram crane crash crater crawl crazy cream credit creek crew cricket crime crisp critic crop cross crouch crowd crucial cruel cruise crumble crunch crush cry crystal cube culture cup cupboard curious current curtain curve cushion custom cute cycle dad damage damp dance danger daring dash daughter dawn day deal debate debris decade december decide decline decorate decrease deer defense define defy degree delay deliver demand demise denial dentist deny depart depend deposit depth deputy derive describe desert design desk despair destroy detail detect develop device devote diagram dial diamond diary dice diesel diet differ digital dignity dilemma dinner dinosaur direct dirt disagree discover disease dish dismiss disorder display distance divert divide divorce dizzy doctor document dog doll dolphin domain donate donkey donor door dose double dove draft dragon drama drastic draw dream dress drift drill drink drip drive drop drum dry duck dumb dune during dust dutch duty dwarf dynamic eager eagle early earn earth easily east easy echo ecology economy edge edit educate effort egg eight either elbow elder electric elegant element elephant elevator elite else embark embody embrace emerge emotion employ empower empty enable enact end endless endorse enemy energy enforce engage engine enhance enjoy enlist enough enrich enroll ensure enter entire entry envelope episode equal equip era erase erode erosion error erupt escape essay essence estate eternal ethics evidence evil evoke evolve exact example excess exchange excite exclude excuse execute exercise exhaust exhibit exile exist exit exotic expand expect expire explain expose express extend extra eye eyebrow fabric face faculty fade faint faith fall false fame family famous fan fancy fantasy farm fashion fat fatal father fatigue fault favorite feature february federal fee feed feel female fence festival fetch fever few fiber fiction field figure file film filter final find fine finger finish fire firm first fiscal fish fit fitness fix flag flame flash flat flavor flee flight flip float flock floor flower fluid flush fly foam focus fog foil fold follow food foot force forest forget fork fortune forum forward fossil foster found fox fragile frame frequent fresh friend fringe frog front frost frown frozen fruit fuel fun funny furnace fury future gadget gain galaxy gallery game gap garage garbage garden garlic garment gas gasp gate gather gauge gaze general genius genre gentle genuine gesture ghost giant gift giggle ginger giraffe girl give glad glance glare glass glide glimpse globe gloom glory glove glow glue goat goddess gold good goose gorilla gospel gossip govern gown grab grace grain grant grape grass gravity great green grid grief grit grocery group grow grunt guard guess guide guilt guitar gun gym habit hair half hammer hamster hand happy harbor hard harsh harvest hat have hawk hazard head health heart heavy hedgehog height hello helmet help hen hero hidden high hill hint hip hire history hobby hockey hold hole holiday hollow home honey hood hope horn horror horse hospital host hotel hour hover hub huge human humble humor hundred hungry hunt hurdle hurry hurt husband hybrid ice icon idea identify idle ignore ill illegal illness image imitate immense immune impact impose improve impulse inch include income increase index indicate indoor industry infant inflict inform inhale inherit initial inject injury inmate inner innocent input inquiry insane insect inside inspire install intact interest into invest invite involve iron island isolate issue item ivory jacket jaguar jar jazz jealous jeans jelly jewel job join joke journey joy judge juice jump jungle junior junk just kangaroo keen keep ketchup key kick kid kidney kind kingdom kiss kit kitchen kite kitten kiwi knee knife knock know lab label labor ladder lady lake lamp language laptop large later latin laugh laundry lava law lawn lawsuit layer lazy leader leaf learn leave lecture left leg legal legend leisure lemon lend length lens leopard lesson letter level liar liberty library license life lift light like limb limit link lion liquid list little live lizard load loan lobster local lock logic lonely long loop lottery loud lounge love loyal lucky luggage lumber lunar lunch luxury lyrics machine mad magic magnet maid mail main major make mammal man manage mandate mango mansion manual maple marble march margin marine market marriage mask mass master match material math matrix matter maximum maze meadow mean measure meat mechanic medal media melody melt member memory mention menu mercy merge merit merry mesh message metal method middle midnight milk million mimic mind minimum minor minute miracle mirror misery miss mistake mix mixed mixture mobile model modify mom moment monitor monkey monster month moon moral more morning mosquito mother motion motor mountain mouse move movie much muffin mule multiply muscle museum mushroom music must mutual myself mystery myth naive name napkin narrow nasty nation nature near neck need negative neglect neither nephew nerve nest net network neutral never news next nice night noble noise nominee noodle normal north nose notable note nothing notice novel now nuclear number nurse nut oak obey object oblige obscure observe obtain obvious occur ocean october odor off offer office often oil okay old olive olympic omit once one onion online only open opera opinion oppose option orange orbit orchard order ordinary organ orient original orphan ostrich other outdoor outer output outside oval oven over own owner oxygen oyster ozone pact paddle page pair palace palm panda panel panic panther paper parade parent park parrot party pass patch path patient patrol pattern pause pave payment peace peanut pear peasant pelican pen penalty pencil people pepper perfect permit person pet phone photo phrase physical piano picnic picture piece pig pigeon pill pilot pink pioneer pipe pistol pitch pizza place planet plastic plate play please pledge pluck plug plunge poem poet point polar pole police pond pony pool popular portion position possible post potato pottery poverty powder power practice praise predict prefer prepare present pretty prevent price pride primary print priority prison private prize problem process produce profit program project promote proof property prosper protect proud provide public pudding pull pulp pulse pumpkin punch pupil puppy purchase purity purpose purse push put puzzle pyramid quality quantum quarter question quick quit quiz quote rabbit raccoon race rack radar radio rail rain raise rally ramp ranch random range rapid rare rate rather raven raw razor ready real reason rebel rebuild recall receive recipe record recycle reduce reflect reform refuse region regret regular reject relax release relief rely remain remember remind remove render renew rent reopen repair repeat replace report require rescue resemble resist resource response result retire retreat return reunion reveal review reward rhythm rib ribbon rice rich ride ridge rifle right rigid ring riot ripple risk ritual rival river road roast robot robust rocket romance roof rookie room rose rotate rough round route royal rubber rude rug rule run runway rural sad saddle sadness safe sail salad salmon salon salt salute same sample sand satisfy satoshi sauce sausage save say scale scan scare scatter scene scheme school science scissors scorpion scout scrap screen script scrub sea search season seat second secret section security seed seek segment select sell seminar senior sense sentence series service session settle setup seven shadow shaft shallow share shed shell sheriff shield shift shine ship shiver shock shoe shoot shop short shoulder shove shrimp shrug shuffle shy sibling sick side siege sight sign silent silk silly silver similar simple since sing siren sister situate six size skate sketch ski skill skin skirt skull slab slam sleep slender slice slide slight slim slogan slot slow slush small smart smile smoke smooth snack snake snap sniff snow soap soccer social sock soda soft solar soldier solid solution solve someone song soon sorry sort soul sound soup source south space spare spatial spawn speak special speed spell spend sphere spice spider spike spin spirit split spoil sponsor spoon sport spot spray spread spring spy square squeeze squirrel stable stadium staff stage stairs stamp stand start state stay steak steel stem step stereo stick still sting stock stomach stone stool story stove strategy street strike strong struggle student stuff stumble style subject submit subway success such sudden suffer sugar suggest suit summer sun sunny sunset super supply supreme sure surface surge surprise surround survey suspect sustain swallow swamp swap swarm swear sweet swift swim swing switch sword symbol symptom syrup system table tackle tag tail talent talk tank tape target task taste tattoo taxi teach team tell ten tenant tennis tent term test text thank that theme then theory there they thing this thought three thrive throw thumb thunder ticket tide tiger tilt timber time tiny tip tired tissue title toast tobacco today toddler toe together toilet token tomato tomorrow tone tongue tonight tool tooth top topic topple torch tornado tortoise toss total tourist toward tower town toy track trade traffic tragic train transfer trap trash travel tray treat tree trend trial tribe trick trigger trim trip trophy trouble truck true truly trumpet trust truth try tube tuition tumble tuna tunnel turkey turn turtle twelve twenty twice twin twist two type typical ugly umbrella unable unaware uncle uncover under undo unfair unfold unhappy uniform unique unit universe unknown unlock until unusual unveil update upgrade uphold upon upper upset urban urge usage use used useful useless usual utility vacant vacuum vague valid valley valve van vanish vapor various vast vault vehicle velvet vendor venture venue verb verify version very vessel veteran viable vibrant vicious victory video view village vintage violin virtual virus visa visit visual vital vivid vocal voice void volcano volume vote voyage wage wagon wait walk wall walnut want warfare warm warrior wash wasp waste water wave way wealth weapon wear weasel weather web wedding weekend weird welcome west wet whale what wheat wheel when where whip whisper wide width wife wild will win window wine wing wink winner winter wire wisdom wise wish witness wolf woman wonder wood wool word work world worry worth wrap wreck wrestle wrist write wrong yard year yellow you young youth zebra zero zone zoo".split(" ");
 
-  /* ============================================================
-     Die geometry: 6 faces placed on a cube. Each face's placement
-     transform = R · translateZ(d). To show face v to the viewer we
-     rotate the cube by R⁻¹ (the inverse). At the settled orientation
-     only a single axis is non-zero, so pips render upright.
-     ============================================================ */
-  const FACE_PLACE = {
-    1: "rotateY(0deg) translateZ(var(--d))",
-    2: "rotateX(90deg) translateZ(var(--d))",
-    3: "rotateY(90deg) translateZ(var(--d))",
-    4: "rotateY(-90deg) translateZ(var(--d))",
-    5: "rotateX(-90deg) translateZ(var(--d))",
-    6: "rotateY(180deg) translateZ(var(--d))",
-  };
-  // base rotation (deg) to bring face v to the front
-  const SHOW = {
-    1: {x:0,   y:0},
-    2: {x:-90, y:0},
-    3: {x:0,   y:-90},
-    4: {x:0,   y:90},
-    5: {x:90,  y:0},
-    6: {x:0,   y:180},
-  };
-  // pip grid positions (row/col in 3x3) per face value
-  const PIPS = {
-    1: ["2/2"],
-    2: ["1/1","3/3"],
-    3: ["1/1","2/2","3/3"],
-    4: ["1/1","1/3","3/1","3/3"],
-    5: ["1/1","1/3","2/2","3/1","3/3"],
-    6: ["1/1","2/1","3/1","1/3","2/3","3/3"],
-  };
-
+  /* ---------- constants ---------- */
   const N = 100;
-  const COLS = 10;
+  const BITS_PER_DIE = Math.log2(6);                 // 2.5849625
+  const TOTAL_BITS = N * BITS_PER_DIE;              // 258.49625
+  const TARGET = 256;
 
-  const arena = document.getElementById("arena");
-  const strmatrix = document.getElementById("strmatrix");
-  const rawstr = document.getElementById("rawstr");
-  const rollBtn = document.getElementById("rollBtn");
-  const pfill = document.getElementById("pfill");
-  const pcount = document.getElementById("pcount");
-  const seedBlock = document.getElementById("seedBlock");
-  const stepper = document.getElementById("stepper");
+  const SPEEDS = {
+    cinema:   { stagger: 22, dur: 1.05, settle: 980,  reveal: 16, mdelay: 26, waitFinal: 1500 },
+    fast:     { stagger: 7,  dur: 0.7,  settle: 640,  reveal: 7,  mdelay: 12, waitFinal: 900  },
+    instant:  { stagger: 0,  dur: 0.25, settle: 60,   reveal: 0,  mdelay: 0,  waitFinal: 120  },
+  };
 
-  /* ---------- build dice + string matrix ---------- */
-  const dice = [];
-  const scells = [];
+  /* ---------- elements ---------- */
+  const $ = id => document.getElementById(id);
+  const grid = $("grid"), concatEl = $("concat"), seedEl = $("seed"), mnemEl = $("mnem");
+  const cntEl = $("bits"), bitsEl = $("bits"), dlenEl = $("dlen"), statusEl = $("status");
+  const fillEl = $("fill"), rollBtn = $("rollBtn"), soundChip = $("sound"), seedBadge = $("seedBadge");
+  const mtag = $("mtag");
+  mtag.textContent = TOTAL_BITS.toFixed(1) + " bits · 100 dice";
 
-  function faceHTML(v){
-    const pips = PIPS[v].map(p =>
-      `<span class="pip" style="grid-area:${p}"></span>`).join("");
-    return `<div class="face" style="transform:${FACE_PLACE[v]}">${pips}</div>`;
-  }
-  function buildDie(){
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    const cube = document.createElement("div");
-    cube.className = "cube";
-    let faces = "";
-    for (let v=1; v<=6; v++) faces += faceHTML(v);
-    cube.innerHTML = faces;
-    cell.appendChild(cube);
-    return {cell, cube};
-  }
-  for (let i=0;i<N;i++){
-    const {cell, cube} = buildDie();
-    arena.appendChild(cell);
-    dice.push({i, cell, cube, rx:0, ry:0, rz:0,
-               vrx:0, vry:0, vrz:0,
-               state:"idle", value:0,
-               settle:null, settleAt:0});
-  }
-  for (let i=0;i<N;i++){
-    const s = document.createElement("div");
-    s.className = "scell";
-    s.textContent = "·";
-    strmatrix.appendChild(s);
-    scells.push(s);
-  }
-
-  /* ---------- math helpers ---------- */
-  const rand = (a,b) => a + Math.random()*(b-a);
-  const easeOutCubic = t => 1 - Math.pow(1-t, 3);
-  const lerp = (a,b,t) => a + (b-a)*t;
-
-  /* cryptographically-secure random ints 1..6 */
-  function rollValues(){
-    const buf = new Uint32Array(N);
-    crypto.getRandomValues(buf);
-    const out = new Array(N);
-    for (let i=0;i<N;i++) out[i] = (buf[i] % 6) + 1; // modulo bias negligible at 2^32
-    return out;
-  }
-
-  /* ---------- animation loop ---------- */
-  let raf = null;
-  let lastTime = 0;
-
-  function applyTransform(d){
-    d.cube.style.transform =
-      `rotateX(${d.rx.toFixed(2)}deg) rotateY(${d.ry.toFixed(2)}deg) rotateZ(${d.rz.toFixed(2)}deg)`;
-  }
-
-  function startSettle(d, now){
-    d.state = "settling";
-    const v = d.pendingValue;
-    const base = SHOW[v];
-    // target = base + enough full spins to be comfortably ahead of current rotation
-    const spinX = 360 * (1 + ((Math.random()*2)|0));
-    const spinY = 360 * (1 + ((Math.random()*2)|0));
-    let toX = base.x;
-    while (toX < d.rx + spinX) toX += 360;
-    let toY = base.y;
-    while (toY < d.ry + spinY) toY += 360;
-    const toZ = Math.round(d.rz/360)*360; // upright
-    d.settle = {
-      fromX:d.rx, fromY:d.ry, fromZ:d.rz,
-      toX, toY, toZ,
-      start:now, dur: rand(520, 720)
-    };
-  }
-
-  function frame(now){
-    const dt = Math.min(50, now - lastTime) / 16.6667; // normalized to ~60fps step
-    lastTime = now;
-    let active = false;
-
-    for (const d of dice){
-      if (d.state === "rolling"){
-        // chaotic tumble: jitter angular velocity, clamp speed
-        d.vrx += rand(-1.6,1.6);
-        d.vry += rand(-1.6,1.6);
-        d.vrz += rand(-1.2,1.2);
-        d.vrx = Math.max(-18, Math.min(18, d.vrx*0.96));
-        d.vry = Math.max(-18, Math.min(18, d.vry*0.96));
-        d.vrz = Math.max(-16, Math.min(16, d.vrz*0.96));
-        d.rx += d.vrx*dt;
-        d.ry += d.vry*dt;
-        d.rz += d.vrz*dt;
-        if (now >= d.settleAt) startSettle(d, now);
-        else applyTransform(d);
-        active = true;
-      } else if (d.state === "settling"){
-        const t = Math.min(1, (now - d.settle.start)/d.settle.dur);
-        const e = easeOutCubic(t);
-        d.rx = lerp(d.settle.fromX, d.settle.toX, e);
-        d.ry = lerp(d.settle.fromY, d.settle.toY, e);
-        d.rz = lerp(d.settle.fromZ, d.settle.toZ, e);
-        applyTransform(d);
-        if (t >= 1){
-          d.rx = d.settle.toX; d.ry = d.settle.toY; d.rz = d.settle.toZ;
-          applyTransform(d);
-          d.state = "done";
-          onSettled(d);
-        }
-        active = true;
-      }
-    }
-
-    if (active) raf = requestAnimationFrame(frame);
-    else { raf = null; finalize(); }
-  }
-
-  /* ---------- per-die settle callbacks ---------- */
-  let settledCount = 0;
-  let concatStr = "";
-
-  function onSettled(d){
-    d.cell.classList.add("lit");
-    d.value = d.pendingValue;
-    concatStr += d.value;
-    // mirror cell in string matrix
-    const s = scells[d.i];
-    s.textContent = d.value;
-    s.classList.add("on");
-    settledCount++;
-    pfill.style.width = (settledCount) + "%";
-    pcount.textContent = settledCount;
-    rawstr.innerHTML = `<b>${concatStr}</b>`;
-    // light stepper: concat active once first die lands
-    if (settledCount === 1) setStep("concat");
-  }
-
-  /* ---------- stepper ---------- */
-  function setStep(name){
-    const map = {roll:0, concat:1, hash:2, seed:3};
-    const idx = map[name];
-    const steps = stepper.querySelectorAll(".step");
-    steps.forEach((s,i) => {
-      s.classList.remove("active","done");
-      if (i < idx) s.classList.add("done");
-      else if (i === idx) s.classList.add("active");
-    });
-  }
-  function markAllDone(){
-    stepper.querySelectorAll(".step").forEach(s => {
-      s.classList.remove("active");
-      s.classList.add("done");
-    });
-  }
-
-  /* ---------- roll control ---------- */
+  /* ---------- state ---------- */
+  let dice = [];
+  let speed = "cinema";
+  let soundOn = true;
+  let audio = null;
   let rolling = false;
+  let concatStr = "";
+  let rolled = 0;
+  let lastValueNodes = [];
+  let timers = [];
+  let curSeedHex = null;
+  let curMnem = [];
+
+  /* ---------- build dice ---------- */
+  const PIPS = {
+    1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]
+  };
+  const FACE_VAL = {front:1,back:6,right:2,left:5,top:3,bottom:4};
+  // target cube rotation (deg) to bring that value to the viewer
+  const FACE_ROT = {
+    1:{x:0,y:0}, 2:{x:0,y:-90}, 3:{x:90,y:0},
+    4:{x:-90,y:0}, 5:{x:0,y:90}, 6:{x:0,y:180}
+  };
+
+  function buildDie(){
+    const die = document.createElement("div");
+    die.className = "die";
+    const sh = document.createElement("div"); sh.className="shadow";
+    const cube = document.createElement("div"); cube.className="cube";
+    for(const f of ["front","back","right","left","top","bottom"]){
+      const face = document.createElement("div"); face.className="face "+f;
+      const v = FACE_VAL[f]; const set = PIPS[v];
+      let html="";
+      for(let i=1;i<=9;i++){ html += '<span class="dot'+(set.includes(i)?" on":"")+'"></span>'; }
+      face.innerHTML = html;
+      cube.appendChild(face);
+    }
+    die.appendChild(sh); die.appendChild(cube);
+    return {el:die, cube};
+  }
+  function initGrid(){
+    grid.innerHTML=""; dice=[];
+    for(let i=0;i<N;i++){ const d=buildDie(); grid.appendChild(d.el); dice.push(d); }
+  }
+
+  function rndInt(max){ // uniform 0..max-1
+    const a=new Uint32Array(1);
+    crypto.getRandomValues(a);
+    return a[0]%max;
+  }
+  function rollValue(){ return 1 + rndInt(6); }
+
+  function applyFace(cube, value, spins){
+    const b = FACE_ROT[value];
+    const rx = b.x + spins.x*360;
+    const ry = b.y + spins.y*360;
+    cube.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+  }
+
+  /* ---------- audio ---------- */
+  function ensureAudio(){
+    if(audio) return;
+    try{ audio = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audio=null; }
+  }
+  function click(soft){
+    if(!soundOn||!audio) return;
+    const t=audio.currentTime;
+    const dur=0.06+Math.random()*0.05;
+    const buf=audio.createBuffer(1,Math.floor(audio.sampleRate*dur),audio.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++){ data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2); }
+    const src=audio.createBufferSource(); src.buffer=buf;
+    const bp=audio.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1800+Math.random()*1400; bp.Q.value=0.8;
+    const g=audio.createGain(); g.gain.value=(soft?0.05:0.13)*(0.7+Math.random()*0.5);
+    src.connect(bp); bp.connect(g); g.connect(audio.destination);
+    src.start();
+  }
+  function chime(){
+    if(!soundOn||!audio) return;
+    const t=audio.currentTime;
+    [523.25,659.25,783.99].forEach((f,i)=>{
+      const o=audio.createOscillator(); o.type="sine"; o.frequency.value=f;
+      const g=audio.createGain(); g.gain.setValueAtTime(0,t+i*0.08);
+      g.gain.linearRampToValueAtTime(0.12,t+i*0.08+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.08+0.6);
+      o.connect(g); g.connect(audio.destination); o.start(t+i*0.08); o.stop(t+i*0.08+0.65);
+    });
+  }
+
+  /* ---------- roll flow ---------- */
+  function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
 
   function reset(){
-    if (raf){ cancelAnimationFrame(raf); raf = null; }
-    settledCount = 0;
-    concatStr = "";
-    pfill.style.width = "0%";
-    pcount.textContent = "0";
-    rawstr.innerHTML = "";
-    for (const d of dice){
-      d.state = "idle";
-      d.rx = d.ry = d.rz = 0;
-      d.vrx = d.vry = d.vrz = 0;
-      d.value = 0;
-      d.cell.classList.remove("lit");
-      applyTransform(d);
-    }
-    for (const s of scells){
-      s.classList.remove("on");
-      s.textContent = "·";
-    }
-    seedBlock.innerHTML =
-      `<div class="seed-pending"><div class="spinner"></div> Rolling 100 dice…</div>`;
+    clearTimers();
+    rolling=true; rolled=0; concatStr=""; curSeedHex=null; curMnem=[];
+    lastValueNodes=[];
+    concatEl.innerHTML=""; seedEl.innerHTML=""; seedBadge.style.display="none";
+    mnemEl.innerHTML='<div class="skel">Roll the dice to generate your recovery phrase…</div>';
+    fillEl.classList.remove("full");
+    fillEl.style.width="0%";
+    cntEl.innerHTML='0<small>/100</small>';
+    bitsEl.innerHTML='0.0<small> bits</small>';
+    dlenEl.innerHTML='0<small>/100</small>';
+    statusEl.textContent="Rolling…"; statusEl.classList.remove("ok");
+    rollBtn.disabled=true;
   }
 
-  function roll(){
-    if (rolling) return;
-    rolling = true;
-    rollBtn.disabled = true;
+  function rollAll(){
     reset();
+    const S=SPEEDS[speed];
+    const values=[];
+    for(let i=0;i<N;i++) values.push(rollValue());
 
-    const values = rollValues();
-    const t0 = performance.now();
-    // cascade settle times: ~0.85s → ~3.25s
-    const order = [...dice.keys()].sort(() => Math.random() - 0.5);
-    order.forEach((idx, k) => {
-      const d = dice[idx];
-      d.pendingValue = values[idx];
-      d.settleAt = t0 + 850 + k*23 + rand(0,110);
-      d.state = "rolling";
-      d.vrx = rand(6,16)*(Math.random()<0.5?-1:1);
-      d.vry = rand(6,16)*(Math.random()<0.5?-1:1);
-      d.vrz = rand(4,12)*(Math.random()<0.5?-1:1);
+    dice.forEach((d,i)=>{
+      const jitter = speed==="instant"?0:(Math.random()*10|0);
+      const delay = i*S.stagger + jitter;
+      d.el.classList.remove("settled","flash");
+      // start tumble from a tossed orientation
+      d.el.classList.add("rolling");
+      // random mid-air spin amount
+      const spinsX = 2 + (Math.random()*3|0);
+      const spinsY = 2 + (Math.random()*3|0);
+      const v = values[i];
+      // toss: big random tumble first (no transition change needed; we set final w/ spins)
+      timers.push(setTimeout(()=>{
+        applyFace(d.cube, v, {x:spinsX, y:spinsY});
+      }, delay));
+      // settle
+      timers.push(setTimeout(()=>{
+        settle(d, v);
+      }, delay + S.settle));
     });
-    // also stagger the *start* of motion for a wave-in feel
-    dice.forEach((d,k) => {
-      d._delay = t0 + (k%10)*6 + Math.floor(k/10)*4;
-    });
 
-    setStep("roll");
-    lastTime = performance.now();
-    raf = requestAnimationFrame(frame);
-
-    // re-enable after finalize
-    const check = setInterval(() => {
-      if (!rolling){ clearInterval(check); rollBtn.disabled = false; }
-    }, 120);
+    const finalWait = (N-1)*S.stagger + S.settle + 160 + S.waitFinal;
+    timers.push(setTimeout(finalize, finalWait));
   }
 
-  /* ---------- finalize: SHA-256 via WebCrypto ---------- */
+  function settle(d, value){
+    rolled++;
+    d.el.classList.remove("rolling");
+    d.el.classList.add("settled","flash");
+    setTimeout(()=>d.el.classList.remove("flash"),220);
+    // append digit
+    concatStr += value;
+    const node=document.createElement("span");
+    node.className="n new"; node.textContent=value;
+    concatEl.appendChild(node);
+    lastValueNodes.push(node);
+    // limit highlight trailing
+    if(lastValueNodes.length>4){ const old=lastValueNodes.shift(); old.classList.remove("new"); }
+    // stats
+    const bits = rolled*BITS_PER_DIE;
+    cntEl.innerHTML = rolled+'<small>/100</small>';
+    bitsEl.innerHTML = bits.toFixed(1)+'<small> bits</small>';
+    dlenEl.innerHTML = concatStr.length+'<small>/100</small>';
+    const pct = Math.min(bits/TARGET,1)*100;
+    fillEl.style.width = pct+"%";
+    if(bits>=TARGET) fillEl.classList.add("full");
+    // sound
+    if(rolled%2===0 || rolled>N-6) click(rolled>N-6);
+  }
+
   async function finalize(){
-    setStep("hash");
-    // small dramatic pause with shimmer
-    seedBlock.innerHTML =
-      `<div class="seed-pending"><div class="spinner"></div> Computing SHA-256 digest…</div>`;
-    await new Promise(r => setTimeout(r, 480));
-
-    let hex;
-    try {
-      const enc = new TextEncoder().encode(concatStr);
-      const digest = await crypto.subtle.digest("SHA-256", enc);
-      hex = [...new Uint8Array(digest)]
-              .map(b => b.toString(16).padStart(2,"0")).join("");
-    } catch (e){
-      seedBlock.innerHTML = `<div class="seed-pending">⚠ crypto.subtle unavailable.</div>`;
-      rolling = false;
-      return;
-    }
-
-    setStep("seed");
-    renderSeed(hex);
-    markAllDone();
-    rolling = false;
+    rolling=false; rollBtn.disabled=false;
+    statusEl.textContent="Hashing…";
+    const bytes = new TextEncoder().encode(concatStr);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    curSeedHex = bufToHex(digest);
+    // reveal
+    await revealSeed(curSeedHex);
+    statusEl.textContent="Secured"; statusEl.classList.add("ok");
+    seedBadge.style.display="inline-flex";
+    chime();
+    finale();
+    // mnemonic
+    await deriveMnemonic(new Uint8Array(digest));
   }
 
-  function renderSeed(hex){
-    // group into 4-char blocks for readability
-    const groups = [];
-    for (let i=0;i<hex.length;i+=4){
-      groups.push(`<span class="grp">${hex.slice(i,i+4)}</span>`);
-    }
-    const html = groups.join(" ");
-    // character "scramble-in" effect
-    seedBlock.innerHTML = `
-      <div class="seed-label">
-        <span>SEED · SHA-256</span>
-        <button class="copy-btn" id="copyBtn">Copy</button>
-      </div>
-      <div class="seed-hex" id="seedHex"></div>
-    `;
-    const seedHex = document.getElementById("seedHex");
-    const chars = "0123456789abcdef";
-    const finalHtml = html;
-    // animate: reveal group by group
-    let gi = 0;
-    const groupsPlain = [];
-    for (let i=0;i<hex.length;i+=4) groupsPlain.push(hex.slice(i,i+4));
-    function revealNext(){
-      if (gi >= groupsPlain.length){
-        seedHex.innerHTML = finalHtml;
-        return;
-      }
-      // revealed groups so far
-      let out = "";
-      for (let j=0;j<gi;j++) out += `<span class="grp">${groupsPlain[j]}</span> `;
-      // current group: scramble some chars for a "decoding" feel
-      const cur = groupsPlain[gi];
-      for (const c of cur){
-        if (Math.random()<0.5){
-          out += `<span class="grp" style="opacity:0.55">${chars[(Math.random()*16)|0]}</span>`;
-        } else {
-          out += `<span class="grp">${c}</span>`;
-        }
-      }
-      out += " ";
-      // dimmed placeholders for remaining groups
-      for (let j=gi+1;j<groupsPlain.length;j++) out += `<span class="grp" style="opacity:0.2">····</span> `;
-      seedHex.innerHTML = out;
-      gi++;
-      setTimeout(revealNext, 55);
-    }
-    revealNext();
+  function bufToHex(buf){
+    const b=new Uint8Array(buf); let s="";
+    for(let i=0;i<b.length;i++) s+=b[i].toString(16).padStart(2,"0");
+    return s;
+  }
 
-    const copyBtn = document.getElementById("copyBtn");
-    copyBtn.addEventListener("click", () => {
-      navigator.clipboard.writeText(hex).then(() => {
-        copyBtn.textContent = "Copied ✓";
-        copyBtn.classList.add("ok");
-        setTimeout(() => { copyBtn.textContent = "Copy"; copyBtn.classList.remove("ok"); }, 1400);
-      });
+  async function revealSeed(hex){
+    const S=SPEEDS[speed];
+    seedEl.innerHTML="";
+    const frag=document.createDocumentFragment();
+    const nodes=[];
+    for(let i=0;i<hex.length;i++){
+      const s=document.createElement("span");
+      s.className="h"; s.textContent=hex[i];
+      if(i && i%2===0){ const sep=document.createElement("span"); sep.className="sep"; sep.textContent=" "; frag.appendChild(sep); }
+      frag.appendChild(s); nodes.push(s);
+    }
+    seedEl.appendChild(frag);
+    for(let i=0;i<nodes.length;i++){
+      const n=nodes[i];
+      timers.push(setTimeout(()=>{ n.classList.add("up","glow");
+        setTimeout(()=>n.classList.remove("glow"),260);
+      }, i*S.reveal));
+    }
+    await new Promise(r=>setTimeout(r, nodes.length*S.reveal+120));
+  }
+
+  async function deriveMnemonic(ent){ // ent: Uint8Array(32)
+    const S=SPEEDS[speed];
+    const csBuf = await crypto.subtle.digest("SHA-256", ent);
+    const csByte = new Uint8Array(csBuf)[0];
+    let bits="";
+    for(let i=0;i<ent.length;i++) bits += ent[i].toString(2).padStart(8,"0");
+    bits += csByte.toString(2).padStart(8,"0");
+    const words=[];
+    for(let i=0;i<24;i++){ const idx=parseInt(bits.slice(i*11,(i+1)*11),2); words.push(WORDLIST[idx]); }
+    curMnem = words;
+    // render
+    mnemEl.innerHTML="";
+    const cells=[];
+    for(let i=0;i<24;i++){
+      const w=document.createElement("div"); w.className="word";
+      w.innerHTML='<span class="idx">'+String(i+1).padStart(2,"0")+'</span><span class="w">'+words[i]+'</span>';
+      mnemEl.appendChild(w); cells.push(w);
+    }
+    for(let i=0;i<24;i++){
+      timers.push(setTimeout(()=>cells[i].classList.add("show"), i*S.mdelay));
+    }
+  }
+
+  /* ---------- finale sparkles ---------- */
+  const fx = $("fx"); const fctx = fx.getContext("2d");
+  let sparks=[];
+  function sizeFx(){ fx.width=innerWidth*devicePixelRatio; fx.height=innerHeight*devicePixelRatio; fx.style.width=innerWidth+"px"; fx.style.height=innerHeight+"px"; }
+  sizeFx(); addEventListener("resize",sizeFx);
+  function finale(){
+    const cx=innerWidth/2, cy=innerHeight*0.42;
+    const cols=["#f7931a","#ffd166","#ffb347","#4aa8ff","#ffffff"];
+    for(let i=0;i<140;i++){
+      const a=Math.random()*Math.PI*2, sp=2+Math.random()*7;
+      sparks.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,life:1,c:cols[Math.random()*cols.length|0],r:1+Math.random()*3});
+    }
+  }
+  function tick(){
+    fctx.clearRect(0,0,fx.width,fx.height);
+    fctx.save(); fctx.scale(devicePixelRatio,devicePixelRatio);
+    for(let i=sparks.length-1;i>=0;i--){
+      const s=sparks[i];
+      s.vy+=0.12; s.vx*=0.99; s.x+=s.vx; s.y+=s.vy; s.life-=0.012;
+      if(s.life<=0){ sparks.splice(i,1); continue; }
+      fctx.globalAlpha=Math.max(0,s.life);
+      fctx.fillStyle=s.c;
+      fctx.beginPath(); fctx.arc(s.x,s.y,s.r,0,7); fctx.fill();
+    }
+    fctx.restore();
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  /* ---------- copy ---------- */
+  document.querySelectorAll(".copy").forEach(b=>{
+    b.addEventListener("click", async ()=>{
+      const which=b.dataset.copy;
+      let txt="";
+      if(which==="concat") txt=concatStr;
+      else if(which==="seed") txt=curSeedHex||"";
+      else if(which==="mnem") txt=curMnem.join(" ");
+      if(!txt) return;
+      try{ await navigator.clipboard.writeText(txt);
+        const orig=b.innerHTML; b.classList.add("done");
+        b.innerHTML='<span>✓</span> Copied';
+        setTimeout(()=>{ b.classList.remove("done"); b.innerHTML=orig; },1400);
+      }catch(e){}
     });
-  }
-
-  /* ---------- wire up ---------- */
-  rollBtn.addEventListener("click", roll);
-  window.addEventListener("keydown", e => {
-    if (e.code === "Space" && !rolling && document.activeElement !== rollBtn){
-      e.preventDefault(); roll();
-    }
   });
 
-  // idle entrance: gentle staggered spin so the grid feels alive
-  function idleIntro(){
-    let k = 0;
-    for (const d of dice){
-      d.state = "settling";
-      const base = SHOW[(Math.random()*6|0)+1];
-      d.settle = {
-        fromX: base.x + 360, fromY: base.y + 360, fromZ: 360,
-        toX: 0, toY: 0, toZ: 0,
-        start: performance.now() + k*8, dur: 700
-      };
-      // start from a tumbled orientation
-      d.rx = base.x + 360; d.ry = base.y + 360; d.rz = 360;
-      k++;
-    }
-    lastTime = performance.now();
-    // patch frame to treat intro as settling; values just decorative
-    function introFrame(now){
-      let active = false;
-      for (const d of dice){
-        if (d.state === "settling"){
-          const t = Math.min(1, (now - d.settle.start)/d.settle.dur);
-          if (t < 0){ active = true; continue; }
-          const e = easeOutCubic(t);
-          d.rx = lerp(d.settle.fromX, d.settle.toX, e);
-          d.ry = lerp(d.settle.fromY, d.settle.toY, e);
-          d.rz = lerp(d.settle.fromZ, d.settle.toZ, e);
-          applyTransform(d);
-          if (t >= 1){ d.state = "idle"; d.rx=d.ry=d.rz=0; applyTransform(d); }
-          else active = true;
-        }
-      }
-      if (active) raf = requestAnimationFrame(introFrame);
-      else raf = null;
-    }
-    raf = requestAnimationFrame(introFrame);
-  }
-  idleIntro();
+  /* ---------- controls ---------- */
+  rollBtn.addEventListener("click", ()=>{ ensureAudio(); if(audio&&audio.state==="suspended") audio.resume(); rollAll(); });
+  soundChip.addEventListener("click", ()=>{
+    soundOn=!soundOn;
+    soundChip.classList.toggle("on",soundOn);
+    soundChip.querySelector(".ic").textContent = soundOn?"🔊":"🔇";
+    if(soundOn){ ensureAudio(); if(audio&&audio.state==="suspended") audio.resume(); }
+  });
+  document.querySelectorAll("#speed button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#speed button").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active"); speed=b.dataset.spd;
+    });
+  });
 
-  // initial stepper state
-  setStep("roll");
+  /* ---------- boot ---------- */
+  initGrid();
+  // gentle idle orientation
+  dice.forEach((d,i)=>{ applyFace(d.cube, (i%6)+1, {x:0,y:0}); d.el.classList.add("settled"); });
+  // auto-roll shortly after load
+  setTimeout(()=>{ ensureAudio(); rollAll(); }, 650);
 })();
 </script>
 </body>
