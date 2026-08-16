@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dice → SHA-256 → Bitcoin Seed</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05060a; --panel:rgba(255,255,255,.025); --border:rgba(255,255,255,.08);
+    --text:#e7eaf2; --dim:#7c8597; --accent:#f7931a; --cyan:#43d0d9; --green:#5fe3a1;
+    --mono:'JetBrains Mono',ui-monospace,monospace; --display:'Space Grotesk',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--display);
+    min-height:100vh; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+
+  /* ---------- background ---------- */
+  .bg{position:fixed;inset:0;z-index:-1;overflow:hidden}
+  .bg::before{content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(circle at 18% 8%, rgba(247,147,26,.12), transparent 42%),
+      radial-gradient(circle at 88% 82%, rgba(67,208,217,.10), transparent 46%);}
+  .grid-lines{position:absolute;inset:-2px;
+    background-image:
+      linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:42px 42px;
+    -webkit-mask:radial-gradient(circle at 50% 38%,#000 25%,transparent 78%);
+            mask:radial-gradient(circle at 50% 38%,#000 25%,transparent 78%);}
+  .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;animation:float 20s ease-in-out infinite}
+  .orb.a{width:440px;height:440px;background:rgba(247,147,26,.20);top:-140px;left:-120px}
+  .orb.b{width:400px;height:400px;background:rgba(67,208,217,.15);bottom:-160px;right:-130px;animation-delay:-10s}
+  @keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:880px;margin:0 auto;padding:28px 18px 64px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .btc{font-size:26px;color:var(--accent);text-shadow:0 0 18px rgba(247,147,26,.7);line-height:1}
+  .brand h1{font-size:18px;font-weight:700;margin:0;letter-spacing:.02em}
+  .brand h1 small{display:block;font-size:10.5px;font-weight:500;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-top:2px}
+  .hud{display:flex;align-items:center;gap:10px}
+  .icon-btn{background:var(--panel);border:1px solid var(--border);color:var(--text);
+    width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;display:grid;place-items:center;transition:.2s}
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .badge{font-family:var(--mono);font-size:11px;color:var(--dim);background:var(--panel);
+    border:1px solid var(--border);padding:8px 12px;border-radius:10px;white-space:nowrap}
+  .badge b{color:var(--accent)}
+
+  .hero{text-align:center;margin:6px 0 26px}
+  .lede{max-width:620px;margin:0 auto 18px;font-size:14.5px;line-height:1.65;color:#b9c0cf}
+  .lede b{color:var(--text)}
+  .flow{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:7px;margin:0 auto 22px}
+  .chip{font-family:var(--mono);font-size:11px;padding:7px 12px;border-radius:999px;
+    background:var(--panel);border:1px solid var(--border);color:#cdd3df;white-space:nowrap}
+  .chip.k{color:var(--accent);border-color:rgba(247,147,26,.3)}
+  .arrow{color:var(--dim);font-size:13px}
+  .roll-btn{position:relative;font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:.04em;
+    color:#1a1206;background:linear-gradient(135deg,#ffa733,#f7931a 55%,#e07410);
+    border:none;padding:15px 38px;border-radius:999px;cursor:pointer;
+    box-shadow:0 8px 28px rgba(247,147,26,.35),inset 0 1px 0 rgba(255,255,255,.4);
+    transition:transform .12s,box-shadow .2s;overflow:hidden}
+  .roll-btn:hover{transform:translateY(-1px);box-shadow:0 12px 34px rgba(247,147,26,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+  .roll-btn:active{transform:translateY(1px) scale(.99)}
+  .roll-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  .roll-btn .dice-glyph{font-size:18px;vertical-align:-2px;margin-right:7px}
+  .roll-btn .sweep{position:absolute;top:0;left:-60%;width:50%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);
+    transform:skewX(-18deg);animation:sweep 3.2s ease-in-out infinite}
+  @keyframes sweep{0%,60%{left:-60%}80%,100%{left:140%}}
+  .hint{margin-top:12px;font-size:12px;color:var(--dim);font-family:var(--mono)}
+  .hint kbd{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:11px;color:var(--text)}
+  .hint code{color:var(--cyan)}
+
+  .status{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:11.5px;font-weight:700;
+    letter-spacing:.18em;padding:7px 15px;border-radius:999px;border:1px solid var(--border);background:var(--panel);
+    transition:.3s}
+  .status.ready{color:var(--dim)}
+  .status.rolling{color:var(--accent);border-color:rgba(247,147,26,.4);box-shadow:0 0 18px rgba(247,147,26,.25);animation:pulse 1s ease-in-out infinite}
+  .status.hashing{color:var(--cyan);border-color:rgba(67,208,217,.4);box-shadow:0 0 18px rgba(67,208,217,.25);animation:pulse 1s ease-in-out infinite}
+  .status.done{color:var(--green);border-color:rgba(95,227,161,.45);box-shadow:0 0 20px rgba(95,227,161,.3)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:18px 20px;margin-bottom:18px;
+    backdrop-filter:blur(6px)}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .panel-head h2{font-size:13px;font-weight:700;letter-spacing:.04em;margin:0;color:#cdd3df}
+  .panel-head h2 .num{color:var(--accent);margin-right:6px}
+  .panel-head .dim{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .ghost{font-family:var(--mono);font-size:11px;color:var(--dim);background:transparent;border:1px solid var(--border);
+    padding:6px 12px;border-radius:8px;cursor:pointer;transition:.2s}
+  .ghost:hover:not(:disabled){color:var(--text);border-color:var(--accent)}
+  .ghost:disabled{opacity:.4;cursor:not-allowed}
+  .ghost.copied{color:var(--green);border-color:rgba(95,227,161,.5)}
+
+  /* ---------- dice ---------- */
+  .dice-grid{--s:clamp(22px,6.8vw,50px);display:grid;grid-template-columns:repeat(10,var(--s));
+    gap:clamp(3px,1vw,8px);justify-content:center;will-change:transform}
+  .die{--s:inherit;width:var(--s);height:var(--s);position:relative;perspective:600px;
+    animation:drop .5s both;animation-delay:calc(var(--i)*5ms)}
+  @keyframes drop{from{opacity:0;transform:translateY(-22px) scale(.6)}to{opacity:1;transform:none}}
+  .die::before{content:"";position:absolute;inset:-32%;border-radius:50%;
+    background:radial-gradient(circle,rgba(247,147,26,.6),transparent 60%);
+    opacity:0;pointer-events:none;transition:opacity .35s}
+  .die.pop::before{opacity:1;transition:opacity .04s}
+  .die.pop .cube{filter:drop-shadow(0 0 8px rgba(247,147,26,.8))}
+  .tilt{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(-13deg) rotateY(18deg)}
+  .cube{position:absolute;inset:0;transform-style:preserve-3d;transition:filter .3s}
+  .face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:13%;
+    background:linear-gradient(145deg,#2b3140,#15191f);border:1px solid rgba(255,255,255,.10);
+    border-radius:15%;box-shadow:inset 0 0 9px rgba(0,0,0,.55)}
+  .face.accent .pip{background:var(--accent);box-shadow:0 0 6px rgba(247,147,26,.75),inset 0 -1px 2px rgba(0,0,0,.4)}
+  .pip{width:62%;aspect-ratio:1;border-radius:50%;background:#eef1f7;place-self:center;
+    box-shadow:inset 0 -1px 2px rgba(0,0,0,.45),0 0 3px rgba(255,255,255,.18)}
+  .f1{transform:translateZ(calc(var(--s)/2))}
+  .f2{transform:rotateY(90deg) translateZ(calc(var(--s)/2))}
+  .f3{transform:rotateX(90deg) translateZ(calc(var(--s)/2))}
+  .f4{transform:rotateX(-90deg) translateZ(calc(var(--s)/2))}
+  .f5{transform:rotateY(-90deg) translateZ(calc(var(--s)/2))}
+  .f6{transform:rotateY(180deg) translateZ(calc(var(--s)/2))}
+
+  /* ---------- entropy string ---------- */
+  .digits{font-family:var(--mono);font-size:clamp(13px,3.4vw,16px);line-height:2.1;
+    display:flex;flex-wrap:wrap;gap:1px;justify-content:center;letter-spacing:.04em}
+  .digits span{display:inline-block;width:1ch;text-align:center;color:var(--dim);transition:.15s}
+  .digits span:nth-child(10n){margin-right:9px}
+  .digits span.on{color:var(--accent);text-shadow:0 0 10px rgba(247,147,26,.55);animation:hit .3s ease}
+  @keyframes hit{0%{transform:translateY(-6px) scale(1.4);color:#fff}100%{transform:none}}
+  .meter{margin-top:16px}
+  .meter-track{position:relative;height:9px;border-radius:999px;background:rgba(255,255,255,.06);overflow:visible}
+  .meter-fill{position:absolute;inset:0 auto 0 0;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,#7a4a10,var(--accent));transition:width .25s ease,background .4s}
+  .meter-fill.over{background:linear-gradient(90deg,var(--accent),var(--green))}
+  .meter-mark{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--cyan);
+    box-shadow:0 0 8px var(--cyan)}
+  .meter-mark::after{content:"256";position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+    font-family:var(--mono);font-size:9.5px;color:var(--cyan);white-space:nowrap}
+  .meter-label{margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .meter-label b{color:var(--text)}
+
+  /* ---------- hash ---------- */
+  .hex{font-family:var(--mono);font-size:clamp(14px,3.6vw,18px);line-height:2;
+    display:flex;flex-wrap:wrap;gap:2px;justify-content:center;letter-spacing:.03em;min-height:2.2em}
+  .hex span{display:inline-block;width:1ch;text-align:center;color:var(--dim);transition:.1s}
+  .hex span:nth-child(8n){margin-right:11px}
+  .hex span.scr{color:#3a4252}
+  .hex span.set{color:var(--cyan);text-shadow:0 0 9px rgba(67,208,217,.4)}
+  .seedmeta{margin-top:14px;font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.7}
+  .seedmeta .ok{color:var(--green)}
+  .seedmeta b{color:var(--text)}
+
+  footer{margin-top:26px;padding-top:18px;border-top:1px solid var(--border);font-size:12px;color:var(--dim);line-height:1.7}
+  footer .row{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;margin-bottom:10px}
+  footer code{font-family:var(--mono);color:var(--text)}
+  footer .warn{color:#e0a37a;background:rgba(247,147,26,.08);border:1px solid rgba(247,147,26,.22);
+    padding:9px 13px;border-radius:9px;font-size:11.5px;text-align:center;margin-top:6px}
+
+  @media (max-width:520px){
+    .brand h1 small{display:none}
+    .lede{font-size:13.5px}
+    .roll-btn{padding:14px 28px;font-size:15px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .orb,.roll-btn .sweep{animation:none}
+    .die{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="bg">
+  <div class="orb a"></div><div class="orb b"></div>
+  <div class="grid-lines"></div>
+</div>
+
+<main class="wrap">
+  <header>
+    <div class="brand">
+      <span class="btc">₿</span>
+      <h1>Dice Entropy Ceremony
+        <small>100 rolls · SHA-256 · cold-storage seed</small>
+      </h1>
+    </div>
+    <div class="hud">
+      <button id="sound" class="icon-btn" title="Toggle sound">🔊</button>
+      <div class="badge">ROLLED <b id="rollCount">0</b>×</div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <p class="lede">
+      Roll <b>100 six-sided dice</b> by hand &mdash; the way cold-storage rituals generate
+      true entropy. Each die contributes <b>log₂(6) ≈ 2.585 bits</b>; 100 rolls yield
+      <b>~258.5 bits</b>, comfortably above the <b>256 bits</b> a Bitcoin private key requires.
+      The 100-digit string is fed through <b>SHA-256</b> to produce your seed.
+    </p>
+    <div class="flow">
+      <span class="chip">100 dice</span><span class="arrow">→</span>
+      <span class="chip">100-digit string</span><span class="arrow">→</span>
+      <span class="chip">SHA-256</span><span class="arrow">→</span>
+      <span class="chip k">64-hex seed</span>
+    </div>
+    <button id="roll" class="roll-btn"><span class="sweep"></span><span class="dice-glyph">🎲</span>ROLL 100 DICE</button>
+    <div class="hint">press <kbd>Space</kbd> · true randomness via <code>crypto.getRandomValues</code></div>
+    <div id="status" class="status ready">READY</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2><span class="num">①</span>The 100 Dice</h2>
+      <span id="dieInfo" class="dim">d1…d100 · six-sided · waiting…</span>
+    </div>
+    <div id="diceGrid" class="dice-grid"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2><span class="num">②</span>Entropy String</h2>
+      <button id="copyDigits" class="ghost" disabled>Copy</button>
+    </div>
+    <div id="digits" class="digits"></div>
+    <div class="meter">
+      <div class="meter-track">
+        <div id="meterFill" class="meter-fill"></div>
+        <div class="meter-mark" style="left:99.03%"></div>
+      </div>
+      <div class="meter-label"><b id="bits">0.0</b> / 256 bits &nbsp;<span id="bitsNote">(each die ≈ 2.585 bits · 100 dice ≈ 258.5)</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2><span class="num">③</span>SHA-256 → Wallet Seed</h2>
+      <button id="copySeed" class="ghost" disabled>Copy Seed</button>
+    </div>
+    <div id="hex" class="hex"></div>
+    <div id="seedMeta" class="seedmeta">hash appears here after all 100 dice land</div>
+  </section>
+
+  <footer>
+    <div class="row">
+      <span>entropy = 100 × log₂(6) = <code>258.496 bits</code></span>
+      <span>search space = 6¹⁰⁰ ≈ <code>6.53 × 10⁷⁷</code></span>
+      <span>output = SHA-256 = <code>32 bytes</code></span>
+    </div>
+    <div class="warn">⚠ Demo. Any seed displayed on a screen must be considered compromised — generate real keys on an air-gapped device.</div>
+  </footer>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+  const DICEC = '123456';
+  const HEXC  = '0123456789abcdef';
+  const LOG2_6 = Math.log2(6);          // 2.584962500721156
+  const MAX_BITS = 100 * LOG2_6;        // 258.496...
+  const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+  // cube rotation that brings face value to the front (+Z, before the tilt wrapper orients it)
+  const FACE_ROT = {
+    1:'rotateX(0deg) rotateY(0deg)',
+    2:'rotateX(0deg) rotateY(-90deg)',
+    3:'rotateX(-90deg) rotateY(0deg)',
+    4:'rotateX(90deg) rotateY(0deg)',
+    5:'rotateX(0deg) rotateY(90deg)',
+    6:'rotateX(0deg) rotateY(180deg)'
+  };
+
+  const grid       = $('diceGrid');
+  const digitsEl   = $('digits');
+  const hexEl      = $('hex');
+  const rollBtn    = $('roll');
+  const soundBtn   = $('sound');
+  const statusEl   = $('status');
+  const rollCountEl= $('rollCount');
+  const dieInfoEl  = $('dieInfo');
+  const bitsEl     = $('bits');
+  const meterFill  = $('meterFill');
+  const seedMeta   = $('seedMeta');
+  const copyDigitsBtn = $('copyDigits');
+  const copySeedBtn   = $('copySeed');
+
+  // ---- build dice ----
+  function faceHTML(v){
+    const pips = PIPS[v].map(p =>
+      `<i class="pip" style="grid-area:${(p/3|0)+1}/${p%3+1}"></i>`
+    ).join('');
+    return `<div class="face f${v} ${v===1||v===4?'accent':''}">${pips}</div>`;
+  }
+  const cubes = [];
+  for(let i=0;i<100;i++){
+    const die = document.createElement('div');
+    die.className = 'die';
+    die.style.setProperty('--i', i);
+    die.innerHTML = `<div class="tilt"><div class="cube" data-i="${i}">${[1,2,3,4,5,6].map(faceHTML).join('')}</div></div>`;
+    grid.appendChild(die);
+    const cube = die.firstElementChild.firstElementChild;
+    const rz = (Math.random()*12-6).toFixed(1);
+    cube._tf = `rotateZ(${rz}deg)`;
+    cube.style.transform = cube._tf;
+    cubes.push(cube);
+  }
+
+  // ---- build 100 digit slots + 64 hex slots ----
+  const digitSlots = [];
+  for(let i=0;i<100;i++){
+    const s = document.createElement('span');
+    s.textContent = '·';
+    if((i+1)%10===0) s.style.marginRight = '9px';
+    digitsEl.appendChild(s);
+    digitSlots.push(s);
+  }
+  const hexSlots = [];
+  for(let i=0;i<64;i++){
+    const s = document.createElement('span');
+    s.textContent = '·';
+    hexEl.appendChild(s);
+    hexSlots.push(s);
+  }
+
+  // ---- crypto helpers ----
+  function randDice(n){
+    const out = new Uint8Array(n);
+    let filled = 0;
+    const max = 256 - (256 % 6); // 252, rejection sampling → unbiased
+    const buf = new Uint8Array(n);
+    while(filled < n){
+      crypto.getRandomValues(buf);
+      for(let i=0;i<buf.length && filled<n;i++){
+        if(buf[i] < max) out[filled++] = (buf[i] % 6) + 1;
+      }
+    }
+    return out;
+  }
+  async function sha256hex(str){
+    const data = new TextEncoder().encode(str);
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  // ---- audio engine ----
+  const audio = {
+    ctx:null, master:null, enabled:true,
+    ensure(){
+      if(!this.ctx){
+        try{ this.ctx = new (window.AudioContext||window.webkitAudioContext)(); }
+        catch(e){ return; }
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.5;
+        this.master.connect(this.ctx.destination);
+      }
+      if(this.ctx.state === 'suspended') this.ctx.resume().catch(()=>{});
+    },
+    _ready(){ return this.enabled && this.ctx && this.ctx.state === 'running'; },
+    tick(){
+      if(!this._ready()) return;
+      const t = this.ctx.currentTime;
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'square'; o.frequency.value = 1200 + Math.random()*1000;
+      g.gain.setValueAtTime(0.05, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      o.connect(g).connect(this.master); o.start(t); o.stop(t + 0.06);
+    },
+    whoosh(){
+      if(!this._ready()) return;
+      const t = this.ctx.currentTime, dur = 0.5;
+      const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate*dur), this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+      const src = this.ctx.createBufferSource(); src.buffer = buf;
+      const bp = this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=0.8;
+      bp.frequency.setValueAtTime(300, t);
+      bp.frequency.exponentialRampToValueAtTime(3000, t+dur);
+      const g = this.ctx.createGain(); g.gain.value = 0.12;
+      src.connect(bp).connect(g).connect(this.master); src.start(t); src.stop(t+dur);
+    },
+    chime(){
+      if(!this._ready()) return;
+      const t = this.ctx.currentTime, notes = [659.25, 987.77, 1567.98];
+      notes.forEach((f,i)=>{
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = i===2 ? 'sine' : 'triangle'; o.frequency.value = f;
+        const s = t + i*0.10;
+        g.gain.setValueAtTime(0.0001, s);
+        g.gain.exponentialRampToValueAtTime(0.14, s+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, s+0.6);
+        o.connect(g).connect(this.master); o.start(s); o.stop(s+0.65);
+      });
+    }
+  };
+  document.addEventListener('pointerdown', () => audio.ensure(), {passive:true});
+
+  // ---- animations ----
+  function rand(a,b){ return a + Math.random()*(b-a); }
+
+  function faceTF(v){
+    return FACE_ROT[v] + ` rotateZ(${rand(-7,7).toFixed(1)}deg)`;
+  }
+
+  function dieAnim(cube, v, delay, dur){
+    const fin = faceTF(v);
+    const kf = [{transform: cube._tf, offset:0}];
+    const hops = 2 + (Math.random()*2|0);
+    for(let h=1; h<=hops; h++){
+      kf.push({
+        transform:
+          `translate(${rand(-14,14).toFixed(1)}px,${rand(-46,-18).toFixed(1)}px) ` +
+          `rotateX(${(360+Math.random()*900).toFixed(0)}deg) ` +
+          `rotateY(${(360+Math.random()*900).toFixed(0)}deg) ` +
+          `rotateZ(${rand(-200,200).toFixed(0)}deg)`,
+        offset: h/(hops+2)
+      });
+    }
+    kf.push({transform:`translateY(5px) ${fin} scale(1.12,0.86)`, offset:0.92});
+    kf.push({transform: fin, offset:1});
+    const a = cube.animate(kf, {duration:dur, delay, easing:'cubic-bezier(.3,.7,.3,1)', fill:'both'});
+    cube._tf = fin;
+    return a;
+  }
+
+  function tableShake(){
+    if(reduce) return;
+    const kf = [];
+    for(let i=0;i<=8;i++){
+      kf.push({transform:`translate(${rand(-3,3).toFixed(1)}px,${rand(-3,3).toFixed(1)}px)`, offset:i/8});
+    }
+    kf.push({transform:'translate(0,0)', offset:1});
+    grid.animate(kf, {duration:620, easing:'ease-out'});
+  }
+
+  function flash(cube){
+    const die = cube.closest('.die');
+    die.classList.add('pop');
+    setTimeout(() => die.classList.remove('pop'), 320);
+  }
+
+  // ---- scrambler (digits during roll) ----
+  let scrambleTimer = null;
+  function startScrambler(){
+    if(reduce) return;
+    scrambleTimer = setInterval(() => {
+      for(let i=0;i<100;i++){
+        if(!landed[i]) digitSlots[i].textContent = DICEC[(Math.random()*6)|0];
+      }
+    }, 45);
+  }
+  function stopScrambler(){
+    if(scrambleTimer){ clearInterval(scrambleTimer); scrambleTimer = null; }
+  }
+
+  function revealHash(hex){
+    return new Promise(resolve => {
+      const dur = reduce ? 250 : 1050;
+      const t0 = performance.now();
+      function frame(now){
+        const p = Math.min(1, (now - t0)/dur);
+        const n = Math.floor(p*64);
+        for(let i=0;i<64;i++){
+          if(i < n){ hexSlots[i].textContent = hex[i]; hexSlots[i].className = 'set'; }
+          else { hexSlots[i].textContent = HEXC[(Math.random()*16)|0]; hexSlots[i].className = 'scr'; }
+        }
+        if(p < 1) requestAnimationFrame(frame);
+        else { for(let i=0;i<64;i++){ hexSlots[i].textContent = hex[i]; hexSlots[i].className = 'set'; } resolve(); }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  // ---- state ----
+  let rolling = false, rollCount = 0, settledCount = 0;
+  const digits = new Array(100).fill(null);
+  const landed = new Array(100).fill(false);
+
+  function setStatus(s){
+    statusEl.className = 'status ' + s;
+    statusEl.textContent = ({ready:'READY',rolling:'ROLLING…',hashing:'HASHING…',done:'SEED READY'})[s];
+  }
+
+  function land(i, v){
+    landed[i] = true;
+    digits[i] = v;
+    digitSlots[i].textContent = v;
+    digitSlots[i].classList.add('on');
+    settledCount++;
+    const bits = settledCount * LOG2_6;
+    bitsEl.textContent = bits.toFixed(1);
+    const pct = bits / MAX_BITS * 100;
+    meterFill.style.width = pct + '%';
+    if(bits >= 256) meterFill.classList.add('over');
+    dieInfoEl.textContent = `${settledCount} / 100 settled`;
+  }
+
+  // ---- main roll ----
+  async function roll(){
+    if(rolling) return;
+    rolling = true;
+    audio.ensure();
+    rollBtn.disabled = true;
+    setStatus('rolling');
+    rollCount++; rollCountEl.textContent = rollCount;
+
+    // reset
+    stopScrambler();
+    settledCount = 0;
+    for(let i=0;i<100;i++){
+      landed[i] = false; digits[i] = null;
+      digitSlots[i].textContent = '·'; digitSlots[i].className = '';
+    }
+    for(let i=0;i<64;i++){ hexSlots[i].textContent = '·'; hexSlots[i].className = ''; }
+    copyDigitsBtn.disabled = true; copySeedBtn.disabled = true;
+    copyDigitsBtn.textContent = 'Copy'; copyDigitsBtn.classList.remove('copied');
+    copySeedBtn.textContent = 'Copy Seed'; copySeedBtn.classList.remove('copied');
+    bitsEl.textContent = '0.0'; meterFill.style.width = '0%'; meterFill.classList.remove('over');
+    dieInfoEl.textContent = '0 / 100 settled';
+    seedMeta.textContent = 'rolling dice…';
+
+    const vals = randDice(100);
+    tableShake();
+    audio.whoosh();
+
+    const finishers = [];
+    for(let i=0;i<100;i++){
+      const cube = cubes[i];
+      const delay = reduce ? 0 : (Math.random()*520 + (i%10)*10);
+      const dur   = reduce ? 40 : (950 + Math.random()*650);
+      const anim = dieAnim(cube, vals[i], delay, dur);
+      finishers.push(new Promise(res => {
+        anim.onfinish = () => { land(i, vals[i]); audio.tick(); flash(cube); res(); };
+      }));
+    }
+    startScrambler();
+    await Promise.all(finishers);
+    stopScrambler();
+
+    // safety: ensure every slot reflects its value
+    for(let i=0;i<100;i++){
+      if(!landed[i]) land(i, vals[i]);
+    }
+
+    setStatus('hashing');
+    const t0 = performance.now();
+    const str = digits.join('');
+    const hex = await sha256hex(str);
+    const ms = (performance.now() - t0).toFixed(2);
+
+    await revealHash(hex);
+
+    seedMeta.innerHTML =
+      `SHA-256 of <b>${str.length} chars</b> → <b>32 bytes</b> · computed in <b>${ms} ms</b><br>` +
+      `<span class="ok">✓</span> 258.5 bits compressed to a 256-bit seed — valid secp256k1 scalar for all practical purposes`;
+    copyDigitsBtn.disabled = false;
+    copySeedBtn.disabled = false;
+    setStatus('done');
+    audio.chime();
+    rollBtn.disabled = false;
+    rolling = false;
+  }
+
+  // ---- copy ----
+  function fallbackCopy(text){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+  }
+  function copy(text, btn, doneLabel){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text)
+        .then(() => { btn.textContent = doneLabel; btn.classList.add('copied'); })
+        .catch(() => fallbackCopy(text));
+    } else fallbackCopy(text);
+  }
+  copyDigitsBtn.addEventListener('click', () => copy(digits.join(''), copyDigitsBtn, 'Copied ✓'));
+  copySeedBtn.addEventListener('click', () => copy(hexSlots.map(s=>s.textContent).join(''), copySeedBtn, 'Copied ✓'));
+
+  // ---- events ----
+  rollBtn.addEventListener('click', roll);
+  soundBtn.addEventListener('click', () => {
+    audio.enabled = !audio.enabled;
+    soundBtn.textContent = audio.enabled ? '🔊' : '🔇';
+    if(audio.enabled) audio.ensure();
+  });
+  addEventListener('keydown', e => {
+    if((e.code === 'Space' || e.code === 'Enter') &&
+       !/^(BUTTON|INPUT|TEXTAREA|SELECT)$/i.test(e.target.tagName)){
+      e.preventDefault();
+      roll();
+    }
+  });
+
+  // ---- auto-roll once on load (visual; audio waits for first gesture) ----
+  setTimeout(roll, reduce ? 200 : 650);
+})();
+</script>
+</body>
+</html>
